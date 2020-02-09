@@ -1,13 +1,20 @@
 import pandas as pd
+import numpy as np
 from sklearn import preprocessing
+from sklearn import metrics
 import os
+from typing import Tuple, Any
+import joblib
 
-from utils import get_logger
+from . import utils
+from . import dispatcher
 
-LOGGER = get_logger(__name__)
+LOGGER = utils.get_logger(__name__)
 
+# TRAINING_DATA = r"\Users\apont\KAGGLE_COMPETITIONS\ml-project-template\inputs\categorical_challenge\train_folds.csv"
 TRAINING_DATA = os.environ.get("TRAINING_DATA")
-FOLD = os.environ.get("FOLD")
+FOLD = int(os.environ.get("FOLD"))
+MODEL = os.environ.get("MODEL")
 
 FOLD_MAPPING = {
     0: [1, 2, 3, 4],
@@ -45,14 +52,48 @@ def clean_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
     return train, val
 
 
+def label_encode_all_data(train: pd.DataFrame, valid: pd.DataFrame) -> Tuple:
+
+    for col in train.columns:
+        LOGGER.info('Preprocessing data..')
+        lbl = preprocessing.LabelEncoder()
+        lbl.fit(train[col])
+        train[col] = lbl.transform(train[col])
+        valid[col] = lbl.transform(valid[col])
+
+    LOGGER.info(f'Train shape: {train.shape}')
+    LOGGER.info(f'Val shape: {valid.shape}')
+
+    return train, valid
+
+
+def train_model(X_train, y_train) -> Any:
+
+    LOGGER.info(f'Training {MODEL}..')
+    model = dispatcher.MODELS[MODEL]
+    model.fit(X_train, y_train)
+    joblib.dump(model, f'{MODEL}_trained')
+    LOGGER.info(f'Training complete!')
+
+    return model
+
+
+def make_predictions_and_score(model: Any, X_val: np.array,
+                               y_val: np.array) -> None:
+
+    LOGGER.info(f'Making predictions and scoring the model...')
+    preds = model.predict_proba(X_val)[:, 1]
+    LOGGER.info(f'ROC_AUC_SCORE: {metrics.roc_auc_score(y_val, preds)}')
+
+
 def main():
 
     train, val = prepare_data(TRAINING_DATA, FOLD, FOLD_MAPPING)
     y_train, y_val = get_targets(train, val)
     X_train, X_val = clean_data(train, val)
-
-    LOGGER.info(f'Train shape: {X_train.shape}')
-    LOGGER.info(f'Val shape: {X_val.shape}')
+    X_train, X_val = label_encode_all_data(X_train, X_val)
+    model = train_model(X_train, y_train)
+    make_predictions_and_score(model, X_val, y_val)
 
 
 if __name__ == "__main__":
