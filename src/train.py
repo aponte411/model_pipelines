@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from sklearn import metrics, preprocessing
 
-import dispatcher
-import utils
+from . import dispatcher
+from . import utils
 
 LOGGER = utils.get_logger(__name__)
 
@@ -28,7 +28,8 @@ def prepare_data(TRAINING_DATA: str, FOLD: str, FOLD_MAPPING: str) -> Tuple:
     LOGGER.info(f'Loading training data from: {TRAINING_DATA}')
     LOGGER.info(f'Fold: {FOLD}')
     df = pd.read_csv(TRAINING_DATA)
-    train = df.loc[df.kfold.isin(FOLD_MAPPING.get(FOLD))].reset_index(drop=True)
+    train = df.loc[df.kfold.isin(
+        FOLD_MAPPING.get(FOLD))].reset_index(drop=True)
     valid = df.loc[df.kfold == FOLD]
     del df
 
@@ -71,14 +72,16 @@ def label_encode_all_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
 
 
 def train_model(X_train: np.array, y_train: np.array) -> Any:
-
-    LOGGER.info(f'Training {MODEL}..')
-    model = dispatcher.MODELS[MODEL]
-    model.fit(X_train, y_train)
-    joblib.dump(model, f'models/{MODEL}_{FOLD}_trained.pkl')
-    LOGGER.info(f'Training complete!')
-
-    return model
+    try:
+        LOGGER.info(f'Training {MODEL}..')
+        model = dispatcher.MODELS[MODEL]
+        model.fit(X_train, y_train)
+        joblib.dump(model, f'models/{MODEL}_{FOLD}_trained.pkl')
+        LOGGER.info(f'Training complete!')
+        return model
+    except Exception as e:
+        LOGGER.error(f'Failed to train {MODEL} with {e}')
+        raise e
 
 
 def make_predictions_and_score(model: Any, X_val: np.array,
@@ -86,7 +89,7 @@ def make_predictions_and_score(model: Any, X_val: np.array,
 
     LOGGER.info(f'Making predictions and scoring the model...')
     preds = model.predict_proba(X_val)[:, 1]
-    LOGGER.info(f'ROC_AUC_SCORE: {metrics.roc_auc_score(y_val, preds)}')
+    LOGGER.info(f'ROC AUC SCORE: {metrics.roc_auc_score(y_val, preds)}')
 
 
 def main():
