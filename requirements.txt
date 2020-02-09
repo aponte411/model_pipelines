@@ -2,3 +2,4 @@ scikit-learn==0.22.1
 pandas==0.25.0
 numpy
 boto3
+matplotlib
