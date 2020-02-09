@@ -6,7 +6,7 @@ from utils import get_logger
 
 LOGGER = get_logger(__name__)
 
-TRAINING_DATA = os.environ.get(:"TRAINING_DATA")
+TRAINING_DATA = os.environ.get("TRAINING_DATA")
 FOLD = os.environ.get("FOLD")
 
 FOLD_MAPPING = {
@@ -17,29 +17,33 @@ FOLD_MAPPING = {
     4: [0, 1, 2, 3],
 }
 
+
 def prepare_data(TRAINING_DATA: str, FOLD: str, FOLD_MAPPING: str) -> Tuple:
 
     df = pd.read_csv(TRAINING_DATA)
     train_df = df.loc[df.kfold.isin(FOLD_MAPPING.get(FOLD))]
-    valid_df = df.loc[df.kfold==FOLD]
+    valid_df = df.loc[df.kfold == FOLD]
     del df
 
     return train_df, valid_df
 
-def get_targets(train: pd.DataFrame, val: pd.DataFrame)-> Tuple:
+
+def get_targets(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
 
     y_train = train.target.values
     y_val = val.target.values
 
     return y_train, y_val
 
+
 def clean_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
-    
+
     train.drop(['id', 'target', 'kfold'], axis=1, inplace=True)
     val.drop(['id', 'target', 'kfold'], axis=1, inplace=True)
     val = val[train.columns]
 
     return train, val
+
 
 def main():
 
@@ -49,6 +53,7 @@ def main():
 
     LOGGER.info(f'Train shape: {X_train.shape}')
     LOGGER.info(f'Val shape: {X_val.shape}')
+
 
 if __name__ == "__main__":
     main()
