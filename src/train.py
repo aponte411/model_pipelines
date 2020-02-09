@@ -1,20 +1,19 @@
-import pandas as pd
-import numpy as np
-from sklearn import preprocessing
-from sklearn import metrics
 import os
-from typing import Tuple, Any
-import joblib
+from typing import Any, Tuple
 
-import utils
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn import metrics, preprocessing
+
 import dispatcher
+import utils
 
 LOGGER = utils.get_logger(__name__)
 
 TRAINING_DATA = os.environ.get("TRAINING_DATA")
 FOLD = int(os.environ.get("FOLD"))
 MODEL = os.environ.get("MODEL")
-
 FOLD_MAPPING = {
     0: [1, 2, 3, 4],
     1: [0, 2, 3, 4],
@@ -26,12 +25,14 @@ FOLD_MAPPING = {
 
 def prepare_data(TRAINING_DATA: str, FOLD: str, FOLD_MAPPING: str) -> Tuple:
 
+    LOGGER.info(f'Loading training data from: {TRAINING_DATA}')
+    LOGGER.info(f'Fold: {FOLD}')
     df = pd.read_csv(TRAINING_DATA)
-    train_df = df.loc[df.kfold.isin(FOLD_MAPPING.get(FOLD))]
-    valid_df = df.loc[df.kfold == FOLD]
+    train = df.loc[df.kfold.isin(FOLD_MAPPING.get(FOLD))].reset_index(drop=True)
+    valid = df.loc[df.kfold == FOLD]
     del df
 
-    return train_df, valid_df
+    return train, valid
 
 
 def get_targets(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
@@ -47,31 +48,34 @@ def clean_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
     train.drop(['id', 'target', 'kfold'], axis=1, inplace=True)
     val.drop(['id', 'target', 'kfold'], axis=1, inplace=True)
     val = val[train.columns]
+    LOGGER.info(f'Train: {train.shape}')
+    LOGGER.info(f'Val: {val.shape}')
 
     return train, val
 
 
-def label_encode_all_data(train: pd.DataFrame, valid: pd.DataFrame) -> Tuple:
+def label_encode_all_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
 
-    label_encoders = []
+    label_encoders = {}
     for col in train.columns:
-        LOGGER.info('Preprocessing data..')
+        LOGGER.info('Preprocessing column {col}')
         lbl = preprocessing.LabelEncoder()
-        lbl.fit(train[col])
-        train[col] = lbl.transform(train[col])
-        valid[col] = lbl.transform(valid[col])
-        label_encoders.append((col, lbl))
-    joblib.dump(label_encoders, f'models/{MODEL}_label_encoders.pkl')
+        lbl.fit(train[col].values)
+        train[col] = lbl.transform(train[col].values)
+        val[col] = lbl.transform(val[col].values)
+        label_encoders[col] = lbl
+
+    joblib.dump(label_encoders, f'models/{MODEL}_{FOLD}_label_encoders.pkl')
 
     return train, valid
 
 
-def train_model(X_train, y_train) -> Any:
+def train_model(X_train: np.array, y_train: np.array) -> Any:
 
     LOGGER.info(f'Training {MODEL}..')
     model = dispatcher.MODELS[MODEL]
     model.fit(X_train, y_train)
-    joblib.dump(model, f'models/{MODEL}_trained.pkl')
+    joblib.dump(model, f'models/{MODEL}_{FOLD}_trained.pkl')
     LOGGER.info(f'Training complete!')
 
     return model
