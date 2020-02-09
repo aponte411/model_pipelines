@@ -6,12 +6,11 @@ import os
 from typing import Tuple, Any
 import joblib
 
-from . import utils
-from . import dispatcher
+import utils
+import dispatcher
 
 LOGGER = utils.get_logger(__name__)
 
-# TRAINING_DATA = r"\Users\apont\KAGGLE_COMPETITIONS\ml-project-template\inputs\categorical_challenge\train_folds.csv"
 TRAINING_DATA = os.environ.get("TRAINING_DATA")
 FOLD = int(os.environ.get("FOLD"))
 MODEL = os.environ.get("MODEL")
@@ -54,7 +53,7 @@ def clean_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
 
 def label_encode_all_data(train: pd.DataFrame, valid: pd.DataFrame) -> Tuple:
 
-    label_encoders = p[]
+    label_encoders = []
     for col in train.columns:
         LOGGER.info('Preprocessing data..')
         lbl = preprocessing.LabelEncoder()
@@ -63,9 +62,6 @@ def label_encode_all_data(train: pd.DataFrame, valid: pd.DataFrame) -> Tuple:
         valid[col] = lbl.transform(valid[col])
         label_encoders.append((col, lbl))
     joblib.dump(label_encoders, f'models/{MODEL}_label_encoders.pkl')
-
-    LOGGER.info(f'Train shape: {train.shape}')
-    LOGGER.info(f'Val shape: {valid.shape}')
 
     return train, valid
 
