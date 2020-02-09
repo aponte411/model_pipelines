@@ -7,7 +7,7 @@ from utils import get_logger
 
 LOGGER = get_logger(__name__)
 
-BASE_PATH = "\Users\apont\KAGGLE_COMPETITIONS\ml-project-template"
+BASE_PATH = r"\Users\apont\KAGGLE_COMPETITIONS\ml-project-template"
 
 
 def load_training_data(path: str) -> pd.DataFrame:
@@ -20,7 +20,7 @@ def load_training_data(path: str) -> pd.DataFrame:
 
 def apply_stratified_kfold(train: pd.DataFrame, path: str) -> None:
 
-    kf = model_selection.StratifiedKfold(n_splits=5,
+    kf = model_selection.StratifiedKFold(n_splits=5,
                                          shuffle=True,
                                          random_state=123)
     for fold, (train_idx,
@@ -33,8 +33,8 @@ def apply_stratified_kfold(train: pd.DataFrame, path: str) -> None:
 
 
 def main():
-    INPUT_PATH = BASE_PATH + "inputs\nlp_getting_started\train.csv"
-    OUTPUT_PATH = BASE_PATH + "inputs\nlp_getting_started\train_folds.csv"
+    INPUT_PATH = BASE_PATH + r"\inputs\nlp_getting_started\train.csv"
+    OUTPUT_PATH = BASE_PATH + r"\inputs\nlp_getting_started\train_folds.csv"
     train = load_training_data(path=INPUT_PATH)
     apply_stratified_kfold(train=train, path=OUTPUT_PATH)
 
