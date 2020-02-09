@@ -2,12 +2,14 @@ import pandas as pd
 from sklearn import model_selection
 from typing import Tuple
 from pathlib import Path
+import os
 
 from utils import get_logger
 
 LOGGER = get_logger(__name__)
 
-BASE_PATH = r"\Users\apont\KAGGLE_COMPETITIONS\ml-project-template"
+INPUT = os.environ.get("INPUT")
+OUTPUT = os.environ.get("OUTPUT")
 
 
 def load_training_data(path: str) -> pd.DataFrame:
@@ -33,10 +35,9 @@ def apply_stratified_kfold(train: pd.DataFrame, path: str) -> None:
 
 
 def main():
-    INPUT_PATH = BASE_PATH + r"\inputs\nlp_getting_started\train.csv"
-    OUTPUT_PATH = BASE_PATH + r"\inputs\nlp_getting_started\train_folds.csv"
-    train = load_training_data(path=INPUT_PATH)
-    apply_stratified_kfold(train=train, path=OUTPUT_PATH)
+
+    train = load_training_data(path=INPUT)
+    apply_stratified_kfold(train=train, path=OUTPUT)
 
 
 if __name__ == "__main__":
