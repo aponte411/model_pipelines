@@ -5,12 +5,14 @@ Repository to preprocess data, train models, and make inference.
 # Training WIP
 
 1. Define your model in src/dispatcher:
-    - ```MODELS = {
+    - ```
+    MODELS = {
         "randomforest":
         ensemble.RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2),
         "extratrees":
         ensemble.ExtraTreesClassifier(n_estimators=300, n_jobs=-1, verbose=2)
-    }```
+    }
+    ```
 
 2. Setup a bash script (e.g. `training-script.sh`) to define your environmental variables:
     - `export AWS_ACCESS_KEY_ID=<aws-access-key-id>`
