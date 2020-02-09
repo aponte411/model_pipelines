@@ -54,12 +54,15 @@ def clean_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
 
 def label_encode_all_data(train: pd.DataFrame, valid: pd.DataFrame) -> Tuple:
 
+    label_encoders = p[]
     for col in train.columns:
         LOGGER.info('Preprocessing data..')
         lbl = preprocessing.LabelEncoder()
         lbl.fit(train[col])
         train[col] = lbl.transform(train[col])
         valid[col] = lbl.transform(valid[col])
+        label_encoders.append((col, lbl))
+    joblib.dump(label_encoders, f'models/{MODEL}_label_encoders.pkl')
 
     LOGGER.info(f'Train shape: {train.shape}')
     LOGGER.info(f'Val shape: {valid.shape}')
@@ -72,7 +75,7 @@ def train_model(X_train, y_train) -> Any:
     LOGGER.info(f'Training {MODEL}..')
     model = dispatcher.MODELS[MODEL]
     model.fit(X_train, y_train)
-    joblib.dump(model, f'{MODEL}_trained')
+    joblib.dump(model, f'models/{MODEL}_trained.pkl')
     LOGGER.info(f'Training complete!')
 
     return model
