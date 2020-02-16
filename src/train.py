@@ -2,6 +2,8 @@ import os
 from typing import Any, Tuple
 
 import joblib
+import mlflow
+import mlflow.sklearn
 import numpy as np
 import pandas as pd
 from sklearn import metrics, preprocessing
@@ -13,6 +15,7 @@ LOGGER = utils.get_logger(__name__)
 TRAINING_DATA = os.environ.get("TRAINING_DATA")
 FOLD = int(os.environ.get("FOLD"))
 MODEL = os.environ.get("MODEL")
+TARGET = os.environ.get("TARGET")
 FOLD_MAPPING = {
     0: [1, 2, 3, 4],
     1: [0, 2, 3, 4],
@@ -35,10 +38,10 @@ def prepare_data(TRAINING_DATA: str, FOLD: str, FOLD_MAPPING: str) -> Tuple:
     return train, valid
 
 
-def get_targets(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
+def get_targets(train: pd.DataFrame, val: pd.DataFrame, target: str) -> Tuple:
 
-    y_train = train.target.values
-    y_val = val.target.values
+    y_train = train[target].values
+    y_val = val[target].values
 
     return y_train, y_val
 
@@ -54,28 +57,12 @@ def clean_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
     return train, val
 
 
-def label_encode_all_features(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
-
-    label_encoders = {}
-    for col in train.columns:
-        LOGGER.info(f'Preprocessing column {col}')
-        lbl = preprocessing.LabelEncoder()
-        lbl.fit(train[col].values.tolist() + val[col].values.tolist())
-        train[col] = lbl.transform(train[col].values)
-        val[col] = lbl.transform(val[col].values)
-        label_encoders[col] = lbl
-
-    joblib.dump(label_encoders, f'models/{MODEL}_{FOLD}_label_encoders.pkl')
-
-    return train, val
-
-
 def train_model(X_train: np.array, y_train: np.array) -> Any:
     try:
         LOGGER.info(f'Training {MODEL}..')
         model = dispatcher.MODELS[MODEL]
         model.fit(X_train, y_train)
-        joblib.dump(model, f'models/{MODEL}_{FOLD}_trained.pkl')
+        mlflow.sklearn.save_model(model, f'models/{MODEL}_{FOLD}_trained.pkl')
         LOGGER.info(f'Training complete!')
         return model
     except Exception as e:
@@ -94,9 +81,8 @@ def make_predictions_and_score(model: Any, X_val: np.array,
 def main():
 
     train, val = prepare_data(TRAINING_DATA, FOLD, FOLD_MAPPING)
-    y_train, y_val = get_targets(train, val)
+    y_train, y_val = get_targets(train, val, TARGET)
     X_train, X_val = clean_data(train, val)
-    X_train, X_val = label_encode_all_features(X_train, X_val)
     model = train_model(X_train, y_train)
     make_predictions_and_score(model, X_val, y_val)
 
