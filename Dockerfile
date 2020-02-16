@@ -7,4 +7,6 @@ RUN pip install -r requirements.txt
 
 FROM build as run
 
+COPY . .
+
 CMD ["python", "src/train.py"]

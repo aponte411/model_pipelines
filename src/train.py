@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn import metrics, preprocessing
 
-from . import dispatcher
-from . import utils
+from . import dispatcher, utils
 
 LOGGER = utils.get_logger(__name__)
 
