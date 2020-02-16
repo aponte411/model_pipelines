@@ -54,20 +54,20 @@ def clean_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
     return train, val
 
 
-def label_encode_all_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
+def label_encode_all_features(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
 
     label_encoders = {}
     for col in train.columns:
-        LOGGER.info('Preprocessing column {col}')
+        LOGGER.info(f'Preprocessing column {col}')
         lbl = preprocessing.LabelEncoder()
-        lbl.fit(train[col].values)
+        lbl.fit(train[col].values.tolist() + val[col].values.tolist())
         train[col] = lbl.transform(train[col].values)
         val[col] = lbl.transform(val[col].values)
         label_encoders[col] = lbl
 
     joblib.dump(label_encoders, f'models/{MODEL}_{FOLD}_label_encoders.pkl')
 
-    return train, valid
+    return train, val
 
 
 def train_model(X_train: np.array, y_train: np.array) -> Any:
@@ -96,7 +96,7 @@ def main():
     train, val = prepare_data(TRAINING_DATA, FOLD, FOLD_MAPPING)
     y_train, y_val = get_targets(train, val)
     X_train, X_val = clean_data(train, val)
-    X_train, X_val = label_encode_all_data(X_train, X_val)
+    X_train, X_val = label_encode_all_features(X_train, X_val)
     model = train_model(X_train, y_train)
     make_predictions_and_score(model, X_val, y_val)
 
