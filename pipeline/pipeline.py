@@ -66,12 +66,12 @@ def format_preds(test: pd.DataFrame, preds: np.array) -> pd.DataFrame:
     return results
 
 
-def upload_to_gbq(results: pd.DataFrame, project_id: str,
-                  table_id: str) -> None:
+def upload_to_gbq(results: pd.DataFrame, project_id: str, table_id: str,
+                  file_name: str) -> None:
     def setup_creds(file: str) -> Any:
         return service_account.Credentials.from_service_account_file(file)
 
-    creds = setup_creds('pipeline-creds.json')
+    creds = setup_creds(file=file_name)
     pandas_gbq.to_gbq(results,
                       table_id,
                       project_id=project_id,
@@ -95,7 +95,10 @@ def run():
     model = train_model(X=x_train, y=y_train, model_path=MODEL_PATH)
     preds = predict(model=model, X_test=x_test)
     results = format_preds(test=test, preds=preds)
-    upload_to_gbq(results=results, project_id=PROJECT_ID, table_id=TABLE_ID)
+    upload_to_gbq(results=results,
+                  project_id=PROJECT_ID,
+                  table_id=TABLE_ID,
+                  file_name='pipeline-creds.json')
     LOGGER.info(
         f'Upload to Google Big Query @ table {TABLE_ID} under project {PROJECT_ID}'
     )
