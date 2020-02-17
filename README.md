@@ -2,6 +2,8 @@
 
 Repository to preprocess data, train models, and make inference. I set up it so that it can generalize to using AWS, GCP, and any dataset. 
 
+Using inspiration from https://github.com/bgweber and https://github.com/abhishekkrthakur.
+
 # Setup
 
 1. Create a virtual environment using conda, virtualenv, virtualenvwrapper, etc. then pip install the requirements: `pip install -r requirements.txt`
