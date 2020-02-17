@@ -31,7 +31,7 @@ def prepare_data(TRAINING_DATA: str, FOLD: str, FOLD_MAPPING: str) -> Tuple:
 
     LOGGER.info(f'Loading training data from: {TRAINING_DATA}')
     LOGGER.info(f'Fold: {FOLD}')
-    df = pd.read_csv(TRAINING_DATA)
+    df = pd.read_csv(TRAINING_DATA, index_col=False)
     train = df.loc[df.kfold.isin(
         FOLD_MAPPING.get(FOLD))].reset_index(drop=True)
     valid = df.loc[df.kfold == FOLD]

@@ -34,6 +34,7 @@ def apply_stratified_kfold(train: pd.DataFrame, path: str,
         train.loc[val_idx, 'kfold'] = fold
 
     LOGGER.info(f'Saving train folds to disk at {path}')
+    train.reset_index(drop=True)
     train.to_csv(path)
 
 

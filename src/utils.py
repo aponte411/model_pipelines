@@ -56,8 +56,8 @@ class S3Client:
 def clean_data(train: pd.DataFrame, val: pd.DataFrame,
                to_drop: List[str]) -> Tuple:
 
-    train.drop(to_drop, axis=1, inplace=True)
-    val.drop(to_drop, axis=1, inplace=True)
+    train = train.drop(to_drop, axis=1).reset_index(drop=True)
+    val = val.drop(to_drop, axis=1).reset_index(drop=True)
     val = val[train.columns]
     LOGGER.info(f'Train: {train.shape}')
     LOGGER.info(f'Val: {val.shape}')
