@@ -51,3 +51,15 @@ class S3Client:
         s3t = transfer.S3Transfer(self.client)
         s3t.download_file(self.bucket, key, filename)
         LOGGER.info('File successfully downloaded!')
+
+
+def clean_data(train: pd.DataFrame, val: pd.DataFrame,
+               drop: List[str]) -> Tuple:
+
+    train.drop(drop, axis=1, inplace=True)
+    val.drop(drop, axis=1, inplace=True)
+    val = val[train.columns]
+    LOGGER.info(f'Train: {train.shape}')
+    LOGGER.info(f'Val: {val.shape}')
+
+    return train, val

@@ -16,6 +16,8 @@ TRAINING_DATA = os.environ.get("TRAINING_DATA")
 FOLD = int(os.environ.get("FOLD"))
 MODEL = os.environ.get("MODEL")
 TARGET = os.environ.get("TARGET")
+MODEL_PATH = os.environ.get("MODEL_PATH")
+DROP = [TARGET, 'kfold']
 FOLD_MAPPING = {
     0: [1, 2, 3, 4],
     1: [0, 2, 3, 4],
@@ -62,7 +64,7 @@ def train_model(X_train: np.array, y_train: np.array) -> Any:
         LOGGER.info(f'Training {MODEL}..')
         model = dispatcher.MODELS[MODEL]
         model.fit(X_train, y_train)
-        mlflow.sklearn.save_model(model, f'models/{MODEL}_{FOLD}_trained.pkl')
+        mlflow.sklearn.save_model(model, MODEL_PATH)
         LOGGER.info(f'Training complete!')
         return model
     except Exception as e:
@@ -82,7 +84,7 @@ def main():
 
     train, val = prepare_data(TRAINING_DATA, FOLD, FOLD_MAPPING)
     y_train, y_val = get_targets(train, val, TARGET)
-    X_train, X_val = clean_data(train, val)
+    X_train, X_val = utils.clean_data(train, val, DROP)
     model = train_model(X_train, y_train)
     make_predictions_and_score(model, X_val, y_val)
 
