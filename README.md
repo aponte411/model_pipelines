@@ -28,8 +28,6 @@ Repository to preprocess data, train models, and make inference.
 3. Run the training script: `sh training-script.sh`
 
 
-# Deploy WebApp WIP
+# Deploy Web Application WIP
 
-1. `cd webapp`
-
-2. `sh deploy-app.sh <fold> <model-name>`
+1. `sh bash_scripts/run-app.sh`
