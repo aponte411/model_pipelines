@@ -17,7 +17,7 @@ FOLD = int(os.environ.get("FOLD"))
 MODEL = os.environ.get("MODEL")
 TARGET = os.environ.get("TARGET")
 MODEL_PATH = os.environ.get("MODEL_PATH")
-DROP = [TARGET, 'kfold']
+DROP = ['label', 'kfold']
 FOLD_MAPPING = {
     0: [1, 2, 3, 4],
     1: [0, 2, 3, 4],
@@ -48,22 +48,11 @@ def get_targets(train: pd.DataFrame, val: pd.DataFrame, target: str) -> Tuple:
     return y_train, y_val
 
 
-def clean_data(train: pd.DataFrame, val: pd.DataFrame) -> Tuple:
-
-    train.drop(['id', 'target', 'kfold'], axis=1, inplace=True)
-    val.drop(['id', 'target', 'kfold'], axis=1, inplace=True)
-    val = val[train.columns]
-    LOGGER.info(f'Train: {train.shape}')
-    LOGGER.info(f'Val: {val.shape}')
-
-    return train, val
-
-
-def train_model(X_train: np.array, y_train: np.array) -> Any:
+def train_model(X: np.array, y: np.array) -> Any:
     try:
         LOGGER.info(f'Training {MODEL}..')
         model = dispatcher.MODELS[MODEL]
-        model.fit(X_train, y_train)
+        model.fit(X, y)
         mlflow.sklearn.save_model(model, MODEL_PATH)
         LOGGER.info(f'Training complete!')
         return model
@@ -72,21 +61,23 @@ def train_model(X_train: np.array, y_train: np.array) -> Any:
         raise e
 
 
-def make_predictions_and_score(model: Any, X_val: np.array,
-                               y_val: np.array) -> None:
+def make_predictions_and_score(model: Any, X_new: pd.DataFrame,
+                               y_new: pd.DataFrame) -> None:
 
     LOGGER.info(f'Making predictions and scoring the model...')
-    preds = model.predict_proba(X_val)[:, 1]
-    LOGGER.info(f'ROC AUC SCORE: {metrics.roc_auc_score(y_val, preds)}')
+    preds = model.predict_proba(X_new)[:, 1]
+    LOGGER.info(f'ROC-AUC-SCORE: {metrics.roc_auc_score(y_new, preds)}')
 
 
 def main():
 
-    train, val = prepare_data(TRAINING_DATA, FOLD, FOLD_MAPPING)
-    y_train, y_val = get_targets(train, val, TARGET)
-    X_train, X_val = utils.clean_data(train, val, DROP)
-    model = train_model(X_train, y_train)
-    make_predictions_and_score(model, X_val, y_val)
+    train, val = prepare_data(TRAINING_DATA=TRAINING_DATA,
+                              FOLD=FOLD,
+                              FOLD_MAPPING=FOLD_MAPPING)
+    y_train, y_val = get_targets(train=train, val=val, target=TARGET)
+    X_train, X_val = utils.clean_data(train=train, val=val, to_drop=DROP)
+    model = train_model(X=X_train, y=y_train)
+    make_predictions_and_score(model=model, X_new=X_val, y_new=y_val)
 
 
 if __name__ == "__main__":

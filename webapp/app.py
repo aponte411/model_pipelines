@@ -35,16 +35,18 @@ def create_new_row(params: Dict) -> Dict:
 
 
 def format_new_row(new_row: Dict) -> pd.DataFrame:
-    return pd.DataFrame.from_dict(new_row, orient='index').tranpose()
+    return pd.DataFrame.from_dict(new_row, orient='index').transpose()
 
 
-def make_prediction(model: Any, X: pd.DataFrame) -> Dict:
+def make_prediction(model: Any, X: pd.DataFrame, params: Dict) -> Dict:
 
-    data = {}
-    data["response"] = str(model.predict_proba(X)[0, 1])
-    data["success"] = True
-
-    return data
+    data = {"response": 0, "sucess": False}
+    if params:
+        data["response"] = str(model.predict_proba(X)[0, 1])
+        data["success"] = True
+        return data
+    else:
+        return data
 
 
 def jsonify_response(data: Dict) -> Any:
@@ -53,11 +55,11 @@ def jsonify_response(data: Dict) -> Any:
 
 @app.route("/", methods=["GET", "POST"])
 def predict():
-
+    params = flask.request.args
     model = load_model(model_path=MODEL_PATH)
-    new_row = create_new_row(params=flask.request.args)
+    new_row = create_new_row(params=params)
     X_new = format_new_row(new_row=new_row)
-    response_data = make_prediction(model=model, X=X_new)
+    response_data = make_prediction(model=model, X=X_new, params=params)
 
     return jsonify_response(data=response_data)
 

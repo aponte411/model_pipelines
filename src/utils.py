@@ -54,10 +54,10 @@ class S3Client:
 
 
 def clean_data(train: pd.DataFrame, val: pd.DataFrame,
-               drop: List[str]) -> Tuple:
+               to_drop: List[str]) -> Tuple:
 
-    train.drop(drop, axis=1, inplace=True)
-    val.drop(drop, axis=1, inplace=True)
+    train.drop(to_drop, axis=1, inplace=True)
+    val.drop(to_drop, axis=1, inplace=True)
     val = val[train.columns]
     LOGGER.info(f'Train: {train.shape}')
     LOGGER.info(f'Val: {val.shape}')
