@@ -1,10 +1,23 @@
 # ML-PROJECT-TEMPLATE
 
-Repository to preprocess data, train models, and make inference.
+Repository to preprocess data, train models, and make inference. I set up it so that it can generalize to using AWS, GCP, and any dataset. 
 
 # Setup
 
 1. Create a virtual environment using conda, virtualenv, virtualenvwrapper, etc. then pip install the requirements: `pip install -r requirements.txt`
+
+2. `mkdir inputs`
+
+3. Download a dataset and store it in `inputs`
+
+4. `mkdir models`
+
+5. Train a model and set MODEL_PATH - e.g. `export MODEL_PATH=<path>`
+
+6. Set up connections to AWS or GCP: 
+
+    - AWS: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html#cli-quick-configuration
+    - GCP: https://cloud.google.com/sdk/gcloud/reference/auth/login
 
 # Training WIP
 
