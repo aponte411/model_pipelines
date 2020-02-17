@@ -34,8 +34,8 @@ Repository to preprocess data, train models, and make inference.
 
 # Run pipeline
 
-- 1. Setup pipeline-creds.json containg all of your GCP credentials info.
+1. Setup pipeline-creds.json containg all of your GCP credentials info.
 
-- 2. `export PROJECT_ID=<project-id> && export IMAGE_NAME=<image-name>`
+2. `export PROJECT_ID=<project-id> && export IMAGE_NAME=<image-name>`
 
-- 3. `sh set-up-creds.sh && sh push-to-gcr.io`
+3. `sh set-up-creds.sh && sh push-to-gcr.io`
