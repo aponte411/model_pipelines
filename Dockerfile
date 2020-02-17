@@ -1,12 +1,16 @@
-FROM python:3.7-slim-buster as base
+FROM ubuntu:latest
 
-FROM base as build
-
+RUN apt-get update && apt-get install -y python3-pip python3-dev
+RUN cd /usr/local/bin && ln -s /usr/local/bin/python3 python
 ADD requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
-FROM build as run
+COPY models .
+COPY webapp .
 
-COPY . .
+RUN export FOLD=0
+RUN export MODEL=randomforest
+RUN export MODEL_PATH=models/${MODEL}_${FOLD}_trained
 
-CMD ["python", "src/train.py"]
+RUN cd webapp
+CMD ["gunicorn --bind 0.0.0.0 wsgi:application"]
