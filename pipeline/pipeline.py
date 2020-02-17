@@ -15,7 +15,8 @@ import utils
 LOGGER = utils.get_logger(__name__)
 
 MODEL_PATH = os.environ.get("MODEL_PATH")
-PROJECT_ID = "datadumpling"
+PROJECT_ID = os.environ.get("PROJECT_ID")
+CREDS = os.environ.get("CREDS")
 TABLE_ID = "pipeline_runs.user_scores"
 
 

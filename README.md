@@ -51,6 +51,10 @@ Using inspiration from https://github.com/bgweber and https://github.com/abhishe
 
 1. Setup pipeline-creds.json containg all of your GCP credentials info.
 
-2. `export PROJECT_ID=<project-id> && export IMAGE_NAME=<image-name>`
+2. `export PROJECT_ID=<project-id>`
 
-3. `sh set-up-creds.sh && sh push-to-gcr.io`
+3. `export IMAGE_NAME=<image-name>`
+
+4. `export CREDS=<path-to-creds-file>`
+
+5. `sh set-up-creds.sh && sh push-to-gcr.io`
