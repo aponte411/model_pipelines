@@ -26,3 +26,8 @@ Repository to preprocess data, train models, and make inference.
     - `python src/train.py`
 
 3. Run the training script: `sh training-script.sh`
+
+
+# Deploy WebApp WIP
+
+1. `sh bash_scripts/deploy-webapp.sh`
