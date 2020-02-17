@@ -6,10 +6,9 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 
-MODEL = os.environ.get("MODEL")
 MODEL_PATH = os.environ.get("MODEL_PATH")
 
-app = flask.Flask(__name__)
+application = flask.Flask(__name__)
 
 
 def load_model(model_path: str) -> Any:
@@ -53,7 +52,7 @@ def jsonify_response(data: Dict) -> Any:
     return flask.jsonify(data)
 
 
-@app.route("/", methods=["GET", "POST"])
+@application.route("/", methods=["GET", "POST"])
 def predict():
     params = flask.request.args
     model = load_model(model_path=MODEL_PATH)
@@ -65,4 +64,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    application.run(host='0.0.0.0')

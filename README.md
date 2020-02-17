@@ -30,4 +30,6 @@ Repository to preprocess data, train models, and make inference.
 
 # Deploy WebApp WIP
 
-1. `sh bash_scripts/deploy-webapp.sh`
+1. `cd webapp`
+
+2. `sh deploy-app.sh <fold> <model-name>`
