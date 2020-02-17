@@ -5,11 +5,7 @@ RUN cd /usr/local/bin && ln -s /usr/local/bin/python3 python
 ADD requirements.txt .
 RUN pip3 install -r requirements.txt
 
-COPY models .
-COPY webapp .
+COPY models/randomforest_0_trained .
+COPY webapp/app.py .
 
-RUN export FOLD=0
-RUN export MODEL=randomforest
-RUN export MODEL_PATH=models/${MODEL}_${FOLD}_trained
-
-ENTRYPOINT ["python3", "webapp/app.py"]
+ENTRYPOINT ["python3", "app.py"]
