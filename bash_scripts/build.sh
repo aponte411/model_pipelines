@@ -1,1 +1,1 @@
->docker build --rm -f "ml-project-template\Dockerfile" -t kagglecompetitions:latest "ml-project-template"
+docker build --rm -f "Dockerfile" -t app_service:latest "."

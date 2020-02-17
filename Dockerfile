@@ -12,5 +12,4 @@ RUN export FOLD=0
 RUN export MODEL=randomforest
 RUN export MODEL_PATH=models/${MODEL}_${FOLD}_trained
 
-RUN cd webapp
-CMD ["gunicorn --bind 0.0.0.0 wsgi:application"]
+ENTRYPOINT ["python3", "webapp/app.py"]

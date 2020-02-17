@@ -4,4 +4,10 @@ run.sh
 .vscode
 
 inputs
+inputs/
 notebooks
+notesbooks/
+
+README.md
+set-and-run.sh
+create-train-data.sh
