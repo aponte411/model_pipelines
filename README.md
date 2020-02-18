@@ -6,24 +6,27 @@ Using inspiration from https://github.com/bgweber and https://github.com/abhishe
 
 # Setup
 
-1. Create a virtual environment using conda, virtualenv, virtualenvwrapper, etc. then pip install the requirements: `pip install -r requirements.txt`
+1. Create a virtual environment using conda, virtualenv, virtualenvwrapper, etc. then pip install the requirements. I recommend using virtualenvwrapper as it makes it super easy to switch between virtual environments https://virtualenvwrapper.readthedocs.io/en/latest/:
 
-2. `mkdir inputs`
+    - `mkvirtualenv new-project`
+    - `pip install -r requirements.txt`
 
-3. Download a dataset and store it in `inputs`
+2. Download a dataset and store it in `inputs`:
 
-4. `mkdir trained_models`
+    - `mkdir inputs`
 
-5. Train a model and set MODEL_PATH - e.g. `export MODEL_PATH=<path>`
+3. Train a model and set MODEL_PATH - e.g. `export MODEL_PATH=trained_models/<model-name>`:
 
-6. Set up connections to AWS or GCP:
+    - `mkdir trained_models`
+
+4. Set up connections to AWS or GCP. This step is a little more involved so checkout the documentation:
 
     - AWS: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html#cli-quick-configuration
     - GCP: https://cloud.google.com/sdk/gcloud/reference/auth/login
 
-# Training WIP
+# Training Models WIP
 
-1. Define your model in model_factory/dispatcher:
+1. Define your model in `model_factory/dispatcher`:
     - `MODELS = {
         "randomforest":
         ensemble.RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2),
@@ -50,12 +53,14 @@ Using inspiration from https://github.com/bgweber and https://github.com/abhishe
 
 1. `cd deployments/pipeline`
 
-2. Setup pipeline-creds.json containg all of your GCP credentials info.
+2. Setup pipeline-creds.json containing all of your GCP credentials info.
 
-3. `export PROJECT_ID=<project-id>`
+3. Setup environmental variables:
 
-4. `export IMAGE_NAME=<image-name>`
+    - `export PROJECT_ID=<project-id>`
+    - `export IMAGE_NAME=<image-name>`
+    - `export CREDS=<path-to-creds-file>`
 
-5. `export CREDS=<path-to-creds-file>`
+4. Run the setup scripts:
 
-5. `sh set-up-creds.sh && sh push-to-gcr.io`
+    - `sh set-up-creds.sh && sh push-to-gcr.io`

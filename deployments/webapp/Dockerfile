@@ -5,7 +5,6 @@ RUN cd /usr/local/bin && ln -s /usr/local/bin/python3 python
 ADD requirements.txt .
 RUN pip3 install -r requirements.txt
 
-COPY trained_models/randomforest_0_trained .
-COPY webapp/app.py .
+COPY . .
 
 CMD ["gunicorn", "--bind", "0.0.0.0", "wsgi:application"]
