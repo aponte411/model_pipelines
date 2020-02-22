@@ -50,7 +50,7 @@ This API is still a WIP so it will probably change.
 
 # Pipelines
 
-Im working on integrating Airflow into the package so that pipelines can be orchestrated using airflow and kubernetes. More coming soon!
+Im working on integrating Airflow into the package so that pipelines can be orchestrated and deployed on a kubernetes cluster. More coming soon!
 
 
 ### Run example pipeline
