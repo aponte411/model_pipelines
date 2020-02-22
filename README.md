@@ -39,24 +39,30 @@ This API is still a WIP so it will probably change.
 
 4. Wrap your Trainer in a predict function and score your model.
 
-# Deploy web application locally WIP (EC2 coming soon)
+# Webapps
+
+### Deploy web application locally
 
 1. `cd deployments/webapp`
 
 2. `sh bash_scripts/run-app.sh`
 
-# Run example pipeline
+
+# Pipelines
+
+Im working on integrating Airflow into the package so that pipelines can be orchestrated using airflow and kubernetes. More coming soon!
+
+
+### Run example pipeline
 
 1. `cd deployments/pipelines/example_pipeline`
 
 2. Setup pipeline-creds.json containing all of your GCP credentials info.
 
 3. Setup environmental variables:
-
     - `export PROJECT_ID=<project-id>`
     - `export IMAGE_NAME=<image-name>`
     - `export CREDS=<path-to-creds-file>`
 
 4. Run the setup scripts:
-
     - `sh set-up-creds.sh && sh push-to-gcr.io`
