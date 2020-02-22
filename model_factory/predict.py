@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple
 import click
 import numpy as np
 
+import dataset
 import models
 import numerapi
 import numerox as nx
@@ -24,24 +25,18 @@ def train_and_predict_xgboost_model(load_model: bool, save_model: bool,
                                     params: Dict) -> None:
     """Train/load model and conduct inference"""
 
-    trainer = trainers.QuoraTrainer()
-    train, val = trainer.prepare_data(TRAINING_DATA=TRAINING_DATA,
-                                    FOLD=FOLD)
-    y_train, y_val = trainer.get_targets(train=train, val=val, target=TARGET)
-    X_train, X_val = trainer.clean_data(train=train, val=val)
-    trainer.make_predictions_and_score(X_new=X_val, y_new=y_val)
+    train, val = dataset.DataSet().prepare_data()
+    y_train, y_val = dataset.DataSet().get_targets()
+    X_train, X_val = dataset.DataSet().clean_data()
+    trainer = trainers.QuoraTrainer(params=params)
     saved_model_name = f'xgboost_prediction_model_{trainer}'
     if load_model:
             trainer.load_from_s3(filename=saved_model_name,
                                  key=saved_model_name)
-            trainer.train_model(X=X_train, y=y_train)
             predictions = trainer.predict(X=X_val)
-            utils.evaluate_predictions(predictions=predictions,
-                                       trainer=trainer,
-                                       tournament=tournament_name)
             return predictions
         else:
-            trainer.train_model(params=params)
+            trainer.train_model(X=X_train, y=y_train)
             if save_model:
                 trainer.save_model_locally(key=saved_model_name)
                 trainer.save_to_s3(filename=saved_model_name,

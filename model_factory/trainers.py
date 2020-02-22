@@ -28,9 +28,10 @@ class BaseTrainer:
     def __init__(
         self,
         model_name: str,
-        to_drop: List,
+        params: Dict,
     ):
         self.model_name = model_name
+        self.params = params
         self.model = None
 
     def __repr__(self):
@@ -74,9 +75,15 @@ class BaseTrainer:
 class QuoraTrainer(BaseTrainer):
     """Trains, serializes, loads, and conducts inference"""
     def __init__(self, model_name='xgboost'):
-        super().__init__(model_name=model_name, to_drop=to_drop)
-
+        super().__init__(model_name=model_name, params=params)
         self.model_name = model_name
+        self.params = {
+            "max_depth": 7,
+            "learning_rate": 0.000123,
+            "l2": 0.02,
+            "n_estimators": 3000,
+            "tree_method": "gpu_hist"
+        }
         self.model = None
 
     def load_model_locally(self, key: str):
@@ -92,21 +99,19 @@ class QuoraTrainer(BaseTrainer):
             f"Trained model loaded from s3 bucket: {os.environ['BUCKET']}")
 
     def train_model(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
-                    params: Dict):
+                    X_val: pd.DataFrame, y_val: pd.DataFrame):
         LOGGER.info("Building XGBoostModel from scratch")
-        if params["tree_method"] == 'gpu_hist':
+        if self.params["tree_method"] == 'gpu_hist':
             LOGGER.info(f"Training XGBoost with GPU's")
-        self.model = models.XGBoostModel(max_depth=params["max_depth"],
-                                         learning_rate=params["learning_rate"],
-                                         l2=params["l2"],
-                                         n_estimators=params["n_estimators"],
-                                         tree_method=params["tree_method"])
-        LOGGER.info(f"Training XGBoost model for {self.tournament}")
-        eval_set = [(self.data['validation'].x,
-                     self.data['validation'].y[self.tournament])]
-        self.model.fit(dfit=self.data['train'],
-                       tournament=self.tournament,
-                       eval_set=eval_set)
+        self.model = models.XGBoostModel(
+            max_depth=self.params["max_depth"],
+            learning_rate=self.params["learning_rate"],
+            l2=self.params["l2"],
+            n_estimators=self.params["n_estimators"],
+            tree_method=self.params["tree_method"])
+        LOGGER.info(f"Training XGBoost model..")
+        eval_set = [(X_val, y_val)]
+        self.model.fit(X=X_train, y=y_train, eval_set=eval_set)
 
     def predict(self, X_new: pd.DataFrame) -> pd.Series:
         LOGGER.info(f'Making predictions..')
@@ -138,7 +143,10 @@ def main():
     train, val = dataset.prepare_data()
     y_train, y_val = dataset.get_targets()
     X_train, X_val = dataset.clean_data()
-    trainer.train_model(X=X_train, y=y_train)
+    trainer.train_model(X_train=X_train,
+                        y_train=y_train,
+                        X_val=X_val,
+                        y_val=y_val)
     trainer.predict_and_score(X_new=X_val, y_new=y_val)
 
 
