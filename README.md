@@ -1,6 +1,8 @@
-# ML-PROJECT-TEMPLATE
+# MODEL-PIPELINES
 
-Repository to preprocess data, train models, and make inference. I set up it so that it can generalize to using AWS, GCP, and any dataset. 
+This is my personal repository to build pipelines that preprocess data, train models, make inference, and are able to be productionized using AWS or GCP. I set up it so that it can work with different ML API's such as scikit-learn, pytorch, xgboost, etc. and multiple types of datasets. 
+
+It's a WIP in progress so I'll be regularly changing things to reduce complexity, deal with bugs, and allow the package to generalize to more type ofs ML probelms. My end goal is for this package to be starter code for others to use and integrate into their own projects. Happy modeling!
 
 Using inspiration from https://github.com/bgweber and https://github.com/abhishekkrthakur.
 
@@ -25,34 +27,27 @@ Using inspiration from https://github.com/bgweber and https://github.com/abhishe
     - AWS: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html#cli-quick-configuration
     - GCP: https://cloud.google.com/sdk/gcloud/reference/auth/login
 
-# Training Models WIP
+# Training Models
 
-1. Define your model in `model_factory/dispatcher`:
-    - `MODELS = {
-        "randomforest":
-        ensemble.RandomForestClassifier(n_estimators=300, n_jobs=-1, verbose=2),
-        "extratrees":
-        ensemble.ExtraTreesClassifier(n_estimators=300, n_jobs=-1, verbose=2)
-    }`
+This API is still a WIP so it will probably change.
 
-2. Setup a bash script (e.g. `training-script.sh`) to define your environmental variables:
-    - `export TRAINING_DATA=<path-to-train>`
-    - `export FOLD=<fold-number>`
-    - `export MODEL=<model-name>`
-    - `python model_factory/train.py`
+1. Setup your DataSet object by pointing to your dataset - e.g. inputs/<data-folder> - and decide on what fold you want you use. As of now, DataSet objects can also take care of cross validation, so you can add further functionality to create folds, etc. 
 
-3. Run the training script: `sh training-script.sh`
+2. Setup your Model by wrapping an sklearn, xgboost, pytorch, or keras model into a Model object that we will use inside of a Trainer.
 
+3. Trainers groups training and inference functionality to abstract away a lot of detail and get you going. They have the ability to load/save trained models to/from s3 buckets (GCP coming soon). More functionality will be added to simplify things.
 
-# Deploy Web Application Locally WIP (EC2 coming soon)
+4. Wrap your Trainer in a predict function and score your model.
+
+# Deploy web application locally WIP (EC2 coming soon)
 
 1. `cd deployments/webapp`
 
 2. `sh bash_scripts/run-app.sh`
 
-# Run pipeline
+# Run example pipeline
 
-1. `cd deployments/pipeline`
+1. `cd deployments/pipelines/example_pipeline`
 
 2. Setup pipeline-creds.json containing all of your GCP credentials info.
 
