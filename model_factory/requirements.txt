@@ -8,4 +8,12 @@ numpy==1.18.1
 boto3==1.11.13
 matplotlib==3.1.3
 nltk==3.4.5
-requests
+xgboost==1.0.1
+catboost
+lightgbm
+keras
+tensorflow
+pytest
+spotty
+click
+polyaxon-client==0.6.0

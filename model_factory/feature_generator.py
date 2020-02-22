@@ -1,12 +1,13 @@
 import os
-from typing import Any, Tuple, List
+from abc import abstractmethod
+from typing import Any, List, Tuple
 
 import joblib
 import nltk
 import numpy as np
 import pandas as pd
-from nltk.tokenize import word_tokenize
 from nltk.stem import SnowballStemmer
+from nltk.tokenize import word_tokenize
 from sklearn import metrics, preprocessing
 
 import dispatcher
@@ -38,13 +39,18 @@ class FeatureGenerator:
     def __init__(self, name: str):
         self.name = name
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
     @abstractmethod
     def create_features(self) -> Tuple:
         pass
 
-    def save_features(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
+    def save_features(self, X: pd.DataFrame) -> None:
         X.to_csv(f"X_{self.name}.csv", index=False)
-        y.to_csv(f"y_{self.name}.csv", index=False)
 
 
 class QuoraFeatureGenerator(FeatureGenerator):
@@ -61,7 +67,7 @@ class QuoraFeatureGenerator(FeatureGenerator):
 
     def remove_spaces(self, text: str) -> str:
         processed_string = text.strip().split()
-        return "".join(processed_string)
+        return " ".join(processed_string)
 
     def tokenize_words(self, text: str) -> List[str]:
         return word_tokenize(text)
