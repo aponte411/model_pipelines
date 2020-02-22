@@ -1,0 +1,5 @@
+FROM docker:latest
+
+COPY build-airflow.sh .
+
+RUN sh build-airflow.sh
