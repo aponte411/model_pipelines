@@ -15,13 +15,6 @@ from dataset import DataSet
 
 LOGGER = utils.get_logger(__name__)
 
-TRAINING_DATA = os.environ.get("TRAINING_DATA")
-FOLD = int(os.environ.get("FOLD"))
-MODEL = os.environ.get("MODEL")
-TARGET = os.environ.get("TARGET")
-MODEL_PATH = os.environ.get("MODEL_PATH")
-DROP = ['is_duplicate', 'kfold']
-
 
 class BaseTrainer:
     """Base class for handling training/inference"""
@@ -147,7 +140,7 @@ def main():
                         y_train=y_train,
                         X_val=X_val,
                         y_val=y_val)
-    trainer.predict_and_score(X_new=X_val, y_new=y_val)
+    preds = trainer.predict_and_score(X_new=X_val, y_new=y_val)
 
 
 if __name__ == "__main__":
