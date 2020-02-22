@@ -15,8 +15,9 @@ LOGGER = utils.get_logger(__name__)
 
 
 def train_and_predict_quora_model(load_model: bool, save_model: bool) -> None:
-
-    train, val = dataset.DataSet().prepare_data()
+    train, val = dataset.DataSet(
+        path="inputs/quora_question_pairs/train-folds.csv",
+        fold=0).prepare_data()
     y_train, y_val = dataset.DataSet().get_targets()
     X_train, X_val = dataset.DataSet().clean_data()
     trainer = trainers.QuoraTrainer()

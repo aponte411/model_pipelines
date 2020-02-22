@@ -66,7 +66,6 @@ class BaseTrainer:
 
 
 class QuoraTrainer(BaseTrainer):
-    """Trains, serializes, loads, and conducts inference"""
     def __init__(self, model_name='xgboost'):
         super().__init__(model_name=model_name, params=params)
         self.model_name = model_name
@@ -112,11 +111,9 @@ class QuoraTrainer(BaseTrainer):
 
     def predict_and_score(self, X_new: pd.DataFrame,
                           y_new: pd.DataFrame) -> None:
-
         LOGGER.info(f'Making predictions and scoring the model...')
         preds = self.model.predict(X=X_new)
         LOGGER.info(f'ROC-AUC-SCORE: {self.model.score(y=y_new, y_hat=preds)}')
-
         return preds
 
     def save_model_locally(self, key: str):
@@ -131,7 +128,7 @@ class QuoraTrainer(BaseTrainer):
 def main():
     trainer = QuoraTrainer(tournament='quora_question_pairs',
                            name='base_trainer')
-    dataset = DataSet(path="../inputs/quora_question_pairs/train-folds.csv",
+    dataset = DataSet(path="inputs/quora_question_pairs/train-folds.csv",
                       fold=0)
     train, val = dataset.prepare_data()
     y_train, y_val = dataset.get_targets()

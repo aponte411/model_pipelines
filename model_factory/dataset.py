@@ -23,7 +23,6 @@ class DataSet:
         self.y_val = None
 
     def prepare_data(self) -> Tuple:
-
         LOGGER.info(f'Loading training data from: {self.path}')
         LOGGER.info(f'Fold: {self.fold}')
         df = pd.read_csv(self.path, index_col=0)
@@ -35,19 +34,15 @@ class DataSet:
         return self.train, self.valid
 
     def get_targets(self) -> Tuple:
-
         self.y_train = self.train[self.target].values
         self.y_val = self.valid[self.target].values
-
         return self.y_train, self.y_val
 
     def clean_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
-
         self.train = self.train.drop(self.to_drop,
                                      axis=1).reset_index(drop=True)
         self.valid = self.valid.drop(to_drop, axis=1).reset_index(drop=True)
         self.valid = self.valid[self.train.columns]
         LOGGER.info(f'Train: {self.train.shape}')
         LOGGER.info(f'Val: {self.valid.shape}')
-
         return self.train, self.valid
