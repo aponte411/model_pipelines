@@ -1,6 +1,7 @@
-import utils
-
 import pandas as pd
+from sklearn import model_selection
+
+import utils
 
 LOGGER = utils.get_logger(__name__)
 
@@ -21,6 +22,11 @@ class DataSet:
         self.valid = None
         self.y_train = None
         self.y_val = None
+
+    def load_training_data(self, path: str) -> pd.DataFrame:
+        train = pd.read_csv(path)
+        train['kfold'] = -1
+        return train
 
     def prepare_data(self) -> Tuple:
         LOGGER.info(f'Loading training data from: {self.path}')
@@ -46,3 +52,23 @@ class DataSet:
         LOGGER.info(f'Train: {self.train.shape}')
         LOGGER.info(f'Val: {self.valid.shape}')
         return self.train, self.valid
+
+
+class QuoraDataSet(DataSet):
+    def __init__(self, path: str, fold: int):
+        super().__init__(path=path, fold=fold)
+
+    def apply_stratified_kfold(self, train: pd.DataFrame, path: str,
+                               target: str) -> None:
+
+        kf = model_selection.StratifiedKFold(n_splits=5,
+                                             shuffle=True,
+                                             random_state=123)
+        for fold, (train_idx, val_idx) in enumerate(
+                kf.split(X=train, y=train[target].values)):
+            LOGGER.info(f'Train index: {len(train_idx)}, Val index: {val_idx}')
+            train.loc[val_idx, 'kfold'] = fold
+
+        LOGGER.info(f'Saving train folds to disk at {path}')
+        train.reset_index(drop=True)
+        train.to_csv(path)
