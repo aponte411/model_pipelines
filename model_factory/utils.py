@@ -56,7 +56,7 @@ class S3Client:
 
 
 def clean_data(train: pd.DataFrame, val: pd.DataFrame,
-               to_drop: List[str]) -> Tuple:
+               to_drop: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     train = train.drop(to_drop, axis=1).reset_index(drop=True)
     val = val.drop(to_drop, axis=1).reset_index(drop=True)

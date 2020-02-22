@@ -18,7 +18,7 @@ FOLD = int(os.environ.get("FOLD"))
 MODEL = os.environ.get("MODEL")
 TARGET = os.environ.get("TARGET")
 MODEL_PATH = os.environ.get("MODEL_PATH")
-DROP = ['label', 'kfold']
+DROP = ['is_duplicate', 'kfold']
 FOLD_MAPPING = {
     0: [1, 2, 3, 4],
     1: [0, 2, 3, 4],

@@ -6,7 +6,7 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 
-MODEL_PATH = "models/randomforest_0_trained"
+MODEL_PATH = "models/randomforest_0_trained/"
 
 application = flask.Flask(__name__)
 

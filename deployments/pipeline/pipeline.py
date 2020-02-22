@@ -69,10 +69,10 @@ def format_preds(test: pd.DataFrame, preds: np.array) -> pd.DataFrame:
 
 def upload_to_gbq(results: pd.DataFrame, project_id: str, table_id: str,
                   file_name: str) -> None:
-    def setup_creds(file: str) -> Any:
+    def _setup_creds(file: str) -> Any:
         return service_account.Credentials.from_service_account_file(file)
 
-    creds = setup_creds(file=file_name)
+    creds = _setup_creds(file=file_name)
     pandas_gbq.to_gbq(results,
                       table_id,
                       project_id=project_id,

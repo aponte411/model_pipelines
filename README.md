@@ -11,9 +11,10 @@ Using inspiration from https://github.com/bgweber and https://github.com/abhishe
     - `mkvirtualenv new-project`
     - `pip install -r requirements.txt`
 
-2. Download a dataset and store it in `inputs`:
-
-    - `mkdir inputs`
+2. Download a dataset and store it in `inputs` for example:`
+    - `mkdir inputs` && `cd inputs`
+    - `mkdir quora_question_pairs` && `cd quora_question_pairs`
+    - `kaggle competitions download -c quora-question-pairs`
 
 3. Train a model and set MODEL_PATH - e.g. `export MODEL_PATH=trained_models/<model-name>`:
 
