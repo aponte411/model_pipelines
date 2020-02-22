@@ -123,22 +123,3 @@ class QuoraTrainer(BaseTrainer):
     def save_to_s3(self, filename: str, key: str):
         LOGGER.info(f"Saving {self.name} for {self.tournament} to s3 bucket")
         self.model.save_to_s3(filename=filename, key=key)
-
-
-def main():
-    trainer = QuoraTrainer(tournament='quora_question_pairs',
-                           name='base_trainer')
-    dataset = DataSet(path="inputs/quora_question_pairs/train-folds.csv",
-                      fold=0)
-    train, val = dataset.prepare_data()
-    y_train, y_val = dataset.get_targets()
-    X_train, X_val = dataset.clean_data()
-    trainer.train_model(X_train=X_train,
-                        y_train=y_train,
-                        X_val=X_val,
-                        y_val=y_val)
-    preds = trainer.predict_and_score(X_new=X_val, y_new=y_val)
-
-
-if __name__ == "__main__":
-    main()
