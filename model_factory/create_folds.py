@@ -1,9 +1,11 @@
+import os
+from pathlib import Path
+from typing import Tuple
+
 import pandas as pd
 from sklearn import model_selection
-from typing import Tuple
-from pathlib import Path
-import os
 
+from dataset import QuoraDataSet
 from utils import get_logger
 
 LOGGER = get_logger(__name__)
@@ -39,9 +41,13 @@ def apply_stratified_kfold(train: pd.DataFrame, path: str,
 
 
 def main():
-
-    train = load_training_data(path=INPUT)
-    apply_stratified_kfold(train=train, path=OUTPUT, target=TARGET)
+    # train = load_training_data(path=INPUT)
+    # apply_stratified_kfold(train=train, path=OUTPUT, target=TARGET)
+    dataset = QuoraDataSet()
+    dataset.apply_stratified_kfold(
+        input="inputs/quora_question_pairs/train.csv",
+        output="inputs/quora_question_pairs/train-folds.csv")
+    dataset.train.head()
 
 
 if __name__ == "__main__":

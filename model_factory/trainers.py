@@ -66,16 +66,9 @@ class BaseTrainer:
 
 
 class QuoraTrainer(BaseTrainer):
-    def __init__(self, model_name='xgboost'):
-        super().__init__(model_name=model_name, params=params)
-        self.model_name = model_name
-        self.params = {
-            "max_depth": 7,
-            "learning_rate": 0.000123,
-            "l2": 0.02,
-            "n_estimators": 3000,
-            "tree_method": "gpu_hist"
-        }
+    def __init__(self, params: Dict):
+        super().__init__(params=params)
+        self.params = params
         self.model = None
 
     def load_model_locally(self, key: str):
