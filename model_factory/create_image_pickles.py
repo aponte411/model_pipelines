@@ -1,4 +1,4 @@
-from dataset import BengaliDataSet
+from datasets import BengaliDataSet
 
 import utils
 
