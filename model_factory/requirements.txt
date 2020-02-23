@@ -11,6 +11,7 @@ nltk==3.4.5
 xgboost==1.0.1
 kaggle==1.5.6
 polyaxon-client==0.6.0
+Pillow==7.0.0
 catboost==0.21
 lightgbm==2.3.1
 Keras==2.3.1
@@ -20,5 +21,8 @@ spotty==1.2.4
 click==7.0
 joblib==0.14.1
 tqdm==4.42.1
+torch==1.4.0
+albumentations==0.4.3
+opencv-python==4.2.0.32
 iterative-stratification==0.1.6
 apache-airflow[celery,kubernetes]

@@ -1,8 +1,15 @@
+import glob
 from typing import Any, List, Tuple
 
+import albumentations
+import joblib
+import numpy as np
 import pandas as pd
-from sklearn import model_selection
+import torch
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
+from PIL import Image
+from sklearn import model_selection
+from tqdm import tqdm
 
 import utils
 
@@ -93,8 +100,84 @@ class BengaliDataSet(DataSet):
                  path: str = "inputs/bengali_grapheme/train-folds.csv",
                  target: List[str] = [
                      "grapheme_root", "vowel_diacritic", "consonant_diacritic"
-                 ]):
+                 ],
+                 folds: int = None,
+                 image_height: int = None,
+                 image_width: int = None,
+                 mean: float = None,
+                 std: float = None):
         super().__init__(path=path, target=target)
+        self.folds = folds
+        self.image_height = image_height
+        self.image_width = image_width
+        self.mean = mean
+        self.std = std
+        self._create_attributes()
+        self._create_augmentations()
+
+    def _create_attributes(self) -> None:
+        df = pd.read_csv(self.path)
+        df = df.drop('grapheme', axis=1)
+        df = df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
+        self.image_ids = df.image_id.values
+        self.grapheme_root = df.grapheme_root.values
+        self.vowel_diacritic = df.vowel_diacritic.values
+        self.consonant_diacritic = df.consonant_diacritic.values
+
+    def _create_augmentations(self) -> None:
+        if len(self.folds) > 1:
+            self.aug = albumentations.compose([
+                albumentations.Resize(self.image_height,
+                                      self.image_width,
+                                      always_apply=True),
+                albumentations.Normalize(self.mean,
+                                         self.std,
+                                         always_apply=True)
+            ])
+        else:
+            self.aug = albumentations.compose([
+                albumentations.Resize(self.image_height,
+                                      self.image_width,
+                                      always_apply=True),
+                albumentations.ShiftScaleRotate(shift_limit=0.0625,
+                                                scale_limit=0.1,
+                                                rotate_limit=5,
+                                                p=0.9),
+                albumentations.Normalize(self.mean,
+                                         self.std,
+                                         always_apply=True)
+            ])
+
+    def __len__(self):
+        return len(self.image_ids)
+
+    def __getitem__(self, item: int) -> Dict:
+        def _prepare_image() -> Image:
+            image = joblib.load(
+                f"inputs/bengali_grapheme/pickled_images/{self.image_ids[item]}.p"
+            )
+            image = image.reshape(137, 236).astype(float)
+            return Image.fromarray(image).convert("RGB")
+
+        def _augment_image(image) -> np.array:
+            image = self.aug(image=np.array(image))["image"]
+            return np.transpose(image, (2, 0, 1)).astype(np.float32)
+
+        def _return_image_dict(image) -> Dict:
+            return {
+                "image":
+                torch.tensor(image, dtype=torch.float),
+                "grapheme_root":
+                torch.tensor(self.grapheme_root[item], dtype=torch.long),
+                "vowel_diacritic":
+                torch.tensor(self.vowel_diacritic[item], dtype=torch.long),
+                "consonant_diacritic":
+                torch.tensor(self.consonant_diacritic[item], dtype=torch.long),
+            }
+
+        image = _prepare_image()
+        image = _augment_image(image=image)
+        return _return_image_dict(image=image)
 
     def _split_data(self,
                     train: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -118,3 +201,15 @@ class BengaliDataSet(DataSet):
             col for col in train.columns
             if col not in self.target and col != 'kfold'
         ]
+
+    def pickle_images(self,
+                      input: str = "inputs/bengali_grapheme/train_*.parquet"):
+        for file in glob.glob(input):
+            df = pd.read_parquet(file)
+            image_ids = df.image_id.values
+            image_array = df.drop('image_id', axis=1).values
+            for idx, image_id in tqdm(enumerate(image_ids),
+                                      total=len(image_ids)):
+                joblib.dump(
+                    image_array[idx, :],
+                    f"inputs/bengali_grapheme/pickled_images/{image_id}.p")
