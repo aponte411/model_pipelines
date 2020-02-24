@@ -1,7 +1,7 @@
 import click.core
 
-from model_factory.dataset import QuoraDataSet
-from model_factory.trainers import QuoraTrainer
+from datasets import QuoraDataSet
+from trainers import QuoraTrainer
 
 
 def preprocess_data(path: str, fold: int) -> Tuple[pd.DataFrame]:

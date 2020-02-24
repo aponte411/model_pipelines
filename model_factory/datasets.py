@@ -116,9 +116,12 @@ class BengaliDataSet(DataSet):
         self._create_augmentations()
 
     def _create_attributes(self) -> None:
-        df = pd.read_csv(self.path)
-        df = df.drop('grapheme', axis=1)
-        df = df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
+        def _load_df() -> pd.DataFrame:
+            df = pd.read_csv(self.path)
+            df = df.drop('grapheme', axis=1)
+            return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
+
+        df = _load_df()
         self.image_ids = df.image_id.values
         self.grapheme_root = df.grapheme_root.values
         self.vowel_diacritic = df.vowel_diacritic.values
@@ -199,7 +202,7 @@ class BengaliDataSet(DataSet):
         self.train = train
         self.feats = [
             col for col in train.columns
-            if col not in self.target and col != 'kfold'
+            if col not in self.target and col not in ['kfold', 'grapheme']
         ]
 
     def pickle_images(self,

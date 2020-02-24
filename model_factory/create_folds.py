@@ -5,7 +5,7 @@ from typing import Tuple
 import pandas as pd
 from sklearn import model_selection
 
-from dataset import QuoraDataSet, BengaliDataSet
+from datasets import QuoraDataSet, BengaliDataSet
 from utils import get_logger
 
 LOGGER = get_logger(__name__)
