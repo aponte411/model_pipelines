@@ -1,7 +1,7 @@
 import click
 from typing import List, Tuple, Dict, Optional
 
-from datasets import QuoraDataSet, BengaliDataSet
+from datasets import QuoraDataSet, BengaliDataSetTrain
 from trainers import QuoraTrainer, BengaliTrainer
 
 
@@ -23,18 +23,11 @@ def run_quora_model(params: Dict, data_path: str, fold: int):
 
 
 def run_bengali_model(fold: int):
-    def preprocess_data(fold: int) -> Tuple[pd.DataFrame]:
-        dataset = BengaliDataSet()
-        train, val = dataset.prepare_data(fold=fold)
-        y_train, y_val = dataset.get_targets()
-        X_train, X_val = dataset.clean_data(to_drop=['is_duplicate', 'kfold'])
-        return X_train, X_val, y_train, y_val
-
-    dataset = BengaliDataSet(folds=[0, 1],
-                             image_height=137,
-                             image_width=236,
-                             mean=(0.485, 0.456, 0.406),
-                             std=(0.229, 0.224, 0.225))
+    dataset = BengaliDataSetTrain(folds=[0, 1],
+                                  image_height=137,
+                                  image_width=236,
+                                  mean=(0.485, 0.456, 0.406),
+                                  std=(0.229, 0.224, 0.225))
     print(len(dataset))
     # WIP
 

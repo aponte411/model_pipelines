@@ -1,4 +1,4 @@
-from datasets import BengaliDataSet
+from datasets import BengaliDataSetTrain
 
 import utils
 
@@ -6,7 +6,7 @@ LOGGER = utils.get_logger(__name__)
 
 
 def main():
-    dataset = BengaliDataSet()
+    dataset = BengaliDataSetTrain()
     dataset.pickle_images()
 
 

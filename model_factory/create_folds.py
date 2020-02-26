@@ -5,7 +5,7 @@ from typing import Tuple
 import pandas as pd
 from sklearn import model_selection
 
-from datasets import QuoraDataSet, BengaliDataSet
+from datasets import QuoraDataSet, BengaliDataSetTrain
 from utils import get_logger
 
 LOGGER = get_logger(__name__)
@@ -23,7 +23,7 @@ def create_quora_folds() -> None:
 
 
 def create_bengali_folds() -> None:
-    dataset = BengaliDataSet()
+    dataset = BengaliDataSetTrain()
     dataset.apply_multilabel_stratified_kfold(
         input="inputs/bengali_grapheme/train.csv",
         output="inputs/bengali_grapheme/train-folds.csv")

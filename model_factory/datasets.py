@@ -95,7 +95,7 @@ class QuoraDataSet(DataSet):
         ]
 
 
-class BengaliDataSet(DataSet):
+class BengaliDataSetTrain(DataSet):
     def __init__(self,
                  path: str = "inputs/bengali_grapheme/train-folds.csv",
                  target: List[str] = [

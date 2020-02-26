@@ -1,5 +1,5 @@
 from sklearn import ensemble
-from models import XGBoostModel
+import models
 
 MODELS = {
     "randomforest":
@@ -7,5 +7,7 @@ MODELS = {
     "extratrees":
     ensemble.ExtraTreesClassifier(n_estimators=300, n_jobs=-1, verbose=2),
     "xgboost":
-    XGBoostModel()
+    models.XGBoostModel(),
+    "resnet":
+    models.ResNet34(pretrained=True)
 }
