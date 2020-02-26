@@ -177,7 +177,7 @@ class BengaliTrainer(BaseTrainer):
         final_targets = torch.cat(final_targets)
         macro_recall = macro_recall(final_outputs, final_targets)
 
-        LOGGER.info(f'loss: {final_loss/counter')
+        LOGGER.info(f'loss: {final_loss/counter}')
         LOGGER.info(f'macro_recall: {macro_recall}')
 
         return final_loss / counter, macro_recall
