@@ -14,8 +14,8 @@ from tqdm import tqdm
 import dispatcher
 import models
 import utils
-import metrics
 from dataset import DataSet
+from metrics import macro_recall
 
 LOGGER = utils.get_logger(__name__)
 
@@ -171,4 +171,4 @@ class BengaliTrainer(BaseTrainer):
             final_outputs.append(torch.cat(output1, output2, output3))
             final_targets.append(torch.cat(target1, target2, target3))
 
-            macro_recall = metrics.macro_recall(final_outputs, final_targets)
+            macro_recall = macro_recall(final_outputs, final_targets)
