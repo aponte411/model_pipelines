@@ -1,5 +1,5 @@
 import glob
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Dict
 
 import albumentations
 import joblib
@@ -101,7 +101,7 @@ class BengaliDataSetTrain(DataSet):
                  target: List[str] = [
                      "grapheme_root", "vowel_diacritic", "consonant_diacritic"
                  ],
-                 folds: int = None,
+                 folds: List[int] = [0, 1],
                  image_height: int = None,
                  image_width: int = None,
                  mean: float = None,
@@ -118,7 +118,7 @@ class BengaliDataSetTrain(DataSet):
     def _create_attributes(self) -> None:
         def _load_df() -> pd.DataFrame:
             df = pd.read_csv(self.path)
-            df = df.drop(['grapheme', 'kfold'], axis=1)
+            df = df.drop('grapheme', axis=1)
             return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
 
         df = _load_df()
@@ -129,7 +129,7 @@ class BengaliDataSetTrain(DataSet):
 
     def _create_augmentations(self) -> None:
         if len(self.folds) > 1:
-            self.aug = albumentations.compose([
+            self.aug = albumentations.Compose([
                 albumentations.Resize(self.image_height,
                                       self.image_width,
                                       always_apply=True),
@@ -138,7 +138,7 @@ class BengaliDataSetTrain(DataSet):
                                          always_apply=True)
             ])
         else:
-            self.aug = albumentations.compose([
+            self.aug = albumentations.Compose([
                 albumentations.Resize(self.image_height,
                                       self.image_width,
                                       always_apply=True),
