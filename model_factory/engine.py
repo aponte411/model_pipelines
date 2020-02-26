@@ -25,7 +25,7 @@ def run_quora_model(params: Dict, data_path: str, fold: int):
     return trainer.predict_and_score(X_new=X_val, y_new=y_val)
 
 
-def run_bengali_model(fold: int):
+def run_bengali_model(fold: int, epochs: int):
     def _prepare_loaders() -> Tuple[DataLoader, DataLoader]:
         train_dataset = BengaliDataSetTrain(
             train_path="inputs/bengali_grapheme/train-folds.csv",
@@ -54,6 +54,9 @@ def run_bengali_model(fold: int):
 
     train, val = _prepare_loaders()
     trainer = BengaliTrainer(model_name='resnet')
+    for epoch in range(epochs):
+        train_loss, train_score = trainer.train(train)
+        val_loss, val_score = trainer.evaluate(valid_loader)
 
     # WIP
 

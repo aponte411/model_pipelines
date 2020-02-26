@@ -140,23 +140,23 @@ class BengaliTrainer(BaseTrainer):
         loss3 = self.criterion(output3, target3)
         return (loss1 + loss2 + loss3) / 3
 
+    def load_to_gpu_float(self, data):
+        return data.to(self.device, dtype=torch.float)
+
+    def load_to_gpu_long(self, data):
+        return data.to(self.device, dtype=torch.long)
+
     def train(self, data_loader) -> Tuple[float, float]:
-        def _load_to_gpu_float(data):
-            return data.to(self.device, dtype=torch.float)
-
-        def _load_to_gpu_long(data):
-            return data.to(self.device, dtype=torch.long)
-
         self.model.train()
         final_loss = 0
         counter = 0
         final_outputs, final_targets = [], []
         for batch, data in tqdm(enumerate(data_loader)):
             counter += 1
-            image = _load_to_gpu_float(data["image"])
-            grapheme_root = _load_to_gpu_long(data["grapheme_root"])
-            vowel_diacritic = _load_to_gpu_long(data["vowel_diacritic"])
-            consonant_diacritic = _load_to_gpu_long(
+            image = self.load_to_gpu_float(data["image"])
+            grapheme_root = self.load_to_gpu_long(data["grapheme_root"])
+            vowel_diacritic = self.load_to_gpu_long(data["vowel_diacritic"])
+            consonant_diacritic = self.load_to_gpu_long(
                 data["consonant_diacritic"])
             self.optimizer.zero_grad()
             outputs = self.model(image)
@@ -181,3 +181,36 @@ class BengaliTrainer(BaseTrainer):
         LOGGER.info(f'macro_recall: {macro_recall}')
 
         return final_loss / counter, macro_recall
+
+    def evaluate(self, data_loader) -> Tuple[float, float]:
+        with torch.no_grad():
+            model.eval()
+            final_loss = 0
+            counter = 0
+            final_outputs, final_targets = [], []
+            for batch, data in tqdm(enumerate(data_loader)):
+                counter += 1
+                image = self.load_to_gpu_float(data["image"])
+                grapheme_root = self.load_to_gpu_long(data["grapheme_root"])
+                vowel_diacritic = self.load_to_gpu_long(
+                    data["vowel_diacritic"])
+                consonant_diacritic = self.load_to_gpu_long(
+                    data["consonant_diacritic"])
+
+                outputs = self.model(image)
+                targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
+                loss = self.loss_fn(outputs=outputs, targets=targets)
+                final_loss += loss
+
+                output1, output2, output3 = outputs
+                target1, target2, target3 = targets
+                final_outputs.append(
+                    torch.cat((output1, output2, output3), dim=1))
+                final_targets.append(
+                    torch.stack((target1, target2, target3), dim=1))
+
+            final_outputs = torch.cat(final_outputs)
+            final_targets = torch.cat(final_targets)
+            macro_recall_score = macro_recall(final_outputs, final_targets)
+
+        return final_loss / counter, macro_recall_score
