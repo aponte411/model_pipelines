@@ -1,8 +1,11 @@
-import click
-from typing import List, Tuple, Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
-from datasets import QuoraDataSet, BengaliDataSetTrain
-from trainers import QuoraTrainer, BengaliTrainer
+import click
+import torch
+from torch.utils.data import DataLoader
+
+from datasets import BengaliDataSetTrain, QuoraDataSet
+from trainers import BengaliTrainer, QuoraTrainer
 
 
 def run_quora_model(params: Dict, data_path: str, fold: int):
@@ -23,13 +26,35 @@ def run_quora_model(params: Dict, data_path: str, fold: int):
 
 
 def run_bengali_model(fold: int):
-    dataset = BengaliDataSetTrain(folds=[0, 1],
-                                  image_height=137,
-                                  image_width=236,
-                                  mean=(0.485, 0.456, 0.406),
-                                  std=(0.229, 0.224, 0.225))
+    def _prepare_loaders() -> Tuple[DataLoader, DataLoader]:
+        train_dataset = BengaliDataSetTrain(
+            train_path="inputs/bengali_grapheme/train-folds.csv",
+            folds=[0, 1, 2, 3],
+            image_height=137,
+            image_width=236,
+            mean=(0.485, 0.456, 0.406),
+            std=(0.229, 0.239, 0.225))
+        train_loader = DataLoader(dataset=train_dataset,
+                                  batch_size=64,
+                                  shuffle=True,
+                                  num_workers=4)
+        val_dataset = BengaliDataSetTrain(
+            train_path="inputs/bengali_grapheme/train-folds.csv",
+            folds=[4],
+            image_height=137,
+            image_width=236,
+            mean=(0.485, 0.456, 0.406),
+            std=(0.229, 0.239, 0.225))
+        val_loader = DataLoader(dataset=val_dataset,
+                                batch_size=64,
+                                shuffle=True,
+                                num_workers=4)
+
+        return train_loader, val_loader
+
+    train, val = _prepare_loaders()
     trainer = BengaliTrainer(model_name='resnet')
-    print(len(dataset))
+
     # WIP
 
 

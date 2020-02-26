@@ -140,7 +140,7 @@ class BengaliTrainer(BaseTrainer):
         loss3 = self.criterion(output3, target3)
         return (loss1 + loss2 + loss3) / 3
 
-    def train(self, dataset, data_loader) -> Tuple[float, float]:
+    def train(self, data_loader) -> Tuple[float, float]:
         def _load_to_gpu_float(data):
             return data.to(self.device, dtype=torch.float)
 
