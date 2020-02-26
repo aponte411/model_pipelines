@@ -4,7 +4,9 @@ from typing import Any, List, Tuple
 import joblib
 import numpy as np
 import pandas as pd
+import pretrainedmodels
 import tensorflow as tf
+import torch.nn as nn
 import xgboost as xgb
 from catboost import CatBoostRegressor
 from keras import Sequential, layers, metrics
@@ -17,6 +19,7 @@ from sklearn.ensemble import (ExtraTreesRegressor, GradientBoostingRegressor,
                               RandomForestRegressor, StackingRegressor,
                               VotingRegressor)
 from sklearn.linear_model import LinearRegression
+from torch.nn import functional as F
 from xgboost import XGBoostClassifier, XGBRegressor
 
 import utils
@@ -75,3 +78,26 @@ class XGBoostModel:
     @classmethod
     def load(cls, filename) -> Any:
         return joblib.load(filename)
+
+
+class ResNet34(nn.Module):
+    def __init__(self, pretrained: bool):
+        super(ResNet34, self).__init__()
+        if pretrained is True:
+            self.model = pretrainedmodels.__dict__["resnet34"](
+                pretrained="imagenet")
+        else:
+            self.model = pretrainedmodels.__dict__["resnet34"](pretrained=None)
+
+        self.linear1 = nn.Linear(512, 168)
+        self.linear2 = nn.Linear(512, 11)
+        self.linear3 = nn.Linear(512, 7)
+
+    def forward(self, x: torch.tensor) -> Tuple:
+        bs, _, _, _ = x.shape
+        x = self.model.features(x)
+        x = F.adaptive_avg_pool2d(x, 1).reshape(bs, -1)
+        linear1 = self.linear1(x)
+        linear2 = self.linear2(x)
+        linear3 = self.linear3(x)
+        return linear1, linear2, linear3

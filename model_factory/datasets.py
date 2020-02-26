@@ -118,7 +118,7 @@ class BengaliDataSet(DataSet):
     def _create_attributes(self) -> None:
         def _load_df() -> pd.DataFrame:
             df = pd.read_csv(self.path)
-            df = df.drop('grapheme', axis=1)
+            df = df.drop(['grapheme', 'kfold'], axis=1)
             return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
 
         df = _load_df()

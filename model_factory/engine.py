@@ -1,4 +1,5 @@
-import click.core
+import click
+from typing import List, Tuple, Dict, Optional
 
 from datasets import QuoraDataSet, BengaliDataSet
 from trainers import QuoraTrainer, BengaliTrainer
@@ -21,8 +22,8 @@ def run_quora_model(params: Dict, data_path: str, fold: int):
     return trainer.predict_and_score(X_new=X_val, y_new=y_val)
 
 
-def run_bengali_model(params: Dict, data_path: str, fold: int):
-    def preprocess_data(path: str, fold: int) -> Tuple[pd.DataFrame]:
+def run_bengali_model(fold: int):
+    def preprocess_data(fold: int) -> Tuple[pd.DataFrame]:
         dataset = BengaliDataSet()
         train, val = dataset.prepare_data(fold=fold)
         y_train, y_val = dataset.get_targets()
@@ -34,25 +35,25 @@ def run_bengali_model(params: Dict, data_path: str, fold: int):
                              image_width=236,
                              mean=(0.485, 0.456, 0.406),
                              std=(0.229, 0.224, 0.225))
+    print(len(dataset))
+    # WIP
 
 
 @click.command()
-@click.option('-d',
-              '--data-path',
-              type=str,
-              default="inputs/quora_question_pairs/train-folds.csv")
+@click.option('-c', '--competition', type=str, default='bengali')
 @click.option('-f', '--fold', type=int, default=0)
-def runner(data_path: str, fold: int) -> pd.DataFrame:
-    XGBOOST_PARAMS = {
-        "max_depth": 7,
-        "learning_rate": 0.000123,
-        "l2": 0.02,
-        "n_estimators": 3000,
-        "tree_method": "gpu_hist"
-    }
-    return run_quora_model(params=XGBOOST_PARAMS,
-                           data_path=data_path,
-                           fold=fold)
+def runner(competition: str, fold: int) -> Optional:
+    if competition == 'quora':
+        XGBOOST_PARAMS = {
+            "max_depth": 7,
+            "learning_rate": 0.000123,
+            "l2": 0.02,
+            "n_estimators": 3000,
+            "tree_method": "gpu_hist"
+        }
+        return run_quora_model(params=XGBOOST_PARAMS, fold=fold)
+    if competition == 'bengali':
+        run_bengali_model(fold=fold)
 
 
 if __name__ == "__main__":

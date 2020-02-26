@@ -1,0 +1,6 @@
+inputs/categorical_challenge
+inputs/games
+inputs/nlp_challenge
+inputs/quora_question_pairs
+trained_models
+deployments
