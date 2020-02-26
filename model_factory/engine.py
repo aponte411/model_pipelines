@@ -28,6 +28,7 @@ def run_bengali_model(fold: int):
                                   image_width=236,
                                   mean=(0.485, 0.456, 0.406),
                                   std=(0.229, 0.224, 0.225))
+    trainer = BengaliTrainer(model_name='resnet')
     print(len(dataset))
     # WIP
 

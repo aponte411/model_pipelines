@@ -25,7 +25,7 @@ class BaseTrainer:
     def __init__(
         self,
         model_name: str,
-        params: Dict,
+        params: Dict = None,
     ):
         self.model_name = model_name
         self.params = params
@@ -70,8 +70,9 @@ class BaseTrainer:
 
 
 class QuoraTrainer(BaseTrainer):
-    def __init__(self, params: Dict):
-        super().__init__(params=params)
+    def __init__(self, model_name: str, params: Dict):
+        super().__init__(model_name=model_name, params=params)
+        self.model_name = model_name
         self.params = params
         self.model = None
 
@@ -123,7 +124,7 @@ class QuoraTrainer(BaseTrainer):
 
 
 class BengaliTrainer(BaseTrainer):
-    def __init__(self, model_name, params):
+    def __init__(self, model_name: str, params: Dict = None):
         super().__init__(model_name, params)
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
