@@ -6,6 +6,8 @@ import joblib
 import numpy as np
 import pandas as pd
 import torch
+import torchvision
+from torch.utils.data import DataLoader, Dataset
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from PIL import Image
 from sklearn import model_selection
@@ -19,10 +21,10 @@ LOGGER = utils.get_logger(__name__)
 class DataSet:
     def __init__(
         self,
-        path: str,
+        train_path: str,
         target: Any,
     ):
-        self.path = path
+        self.train_path = train_path
         self.target = target
         self.feats = None
         self.fold_mapping = {
@@ -43,9 +45,9 @@ class DataSet:
         return train
 
     def prepare_data(self, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        LOGGER.info(f'Loading training data from: {self.path}')
+        LOGGER.info(f'Loading training data from: {self.train_path}')
         LOGGER.info(f'Fold: {fold}')
-        df = pd.read_csv(self.path)
+        df = pd.read_csv(self.train_path)
         self.train = df.loc[df.kfold.isin(
             self.fold_mapping.get(fold))].reset_index(drop=True)
         self.valid = df.loc[df.kfold == fold]
@@ -70,10 +72,10 @@ class DataSet:
 
 class QuoraDataSet(DataSet):
     def __init__(self,
-                 path="inputs/quora_question_pairs/train-folds.csv",
+                 train_path="inputs/quora_question_pairs/train-folds.csv",
                  target="is_duplicate"):
-        super().__init__(path=path, target=target)
-        self.path = path
+        super().__init__(path=train_path, target=target)
+        self.train_path = train_path
         self.target = target
 
     def apply_stratified_kfold(self, input: str, output: str) -> None:
@@ -97,7 +99,7 @@ class QuoraDataSet(DataSet):
 
 class BengaliDataSetTrain(DataSet):
     def __init__(self,
-                 path: str = "inputs/bengali_grapheme/train-folds.csv",
+                 train_path: str,
                  target: List[str] = [
                      "grapheme_root", "vowel_diacritic", "consonant_diacritic"
                  ],
@@ -106,7 +108,7 @@ class BengaliDataSetTrain(DataSet):
                  image_width: int = None,
                  mean: float = None,
                  std: float = None):
-        super().__init__(path=path, target=target)
+        super().__init__(train_path=train_path, target=target)
         self.folds = folds
         self.image_height = image_height
         self.image_width = image_width
@@ -117,7 +119,7 @@ class BengaliDataSetTrain(DataSet):
 
     def _create_attributes(self) -> None:
         def _load_df() -> pd.DataFrame:
-            df = pd.read_csv(self.path)
+            df = pd.read_csv(self.train_path)
             df = df.drop('grapheme', axis=1)
             return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
 

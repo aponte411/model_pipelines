@@ -6,11 +6,15 @@ import mlflow
 import mlflow.sklearn
 import numpy as np
 import pandas as pd
+import torch
+import torch.nn as nn
 from sklearn import metrics, preprocessing
+from tqdm import tqdm
 
 import dispatcher
 import models
 import utils
+import metrics
 from dataset import DataSet
 
 LOGGER = utils.get_logger(__name__)
@@ -116,3 +120,55 @@ class QuoraTrainer(BaseTrainer):
     def save_to_s3(self, filename: str, key: str):
         LOGGER.info(f"Saving {self.name} for {self.tournament} to s3 bucket")
         self.model.save_to_s3(filename=filename, key=key)
+
+
+class BengaliTrainer(BaseTrainer):
+    def __init__(self, model_name, params):
+        super().__init__(model_name, params)
+        self.device = torch.device(
+            'cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.optimizer = torch.optim.Adam(self.model.parameters())
+        self.criterion = nn.CrossEntropyLoss()
+        self.model = models.ResNet34()
+
+    def loss_fn(self, outputs, targets) -> float:
+        output1, output2, output3 = outputs
+        target1, target2, target3 = targets
+        loss1 = self.criterion(output1, target1)
+        loss2 = self.criterion(output2, target2)
+        loss3 = self.criterion(output3, target3)
+        return (loss1 + loss2 + loss3) / 3
+
+    def train(self, dataset, data_loader):
+        def _load_to_gpu_float(data):
+            return data.to(self.device, dtype=torch.float)
+
+        def _load_to_gpu_long(data):
+            return data.to(self.device, dtype=torch.long)
+
+        self.model.train()
+        final_loss = 0
+        counter = 0
+        final_outputs, final_targets = [], []
+        for batch, data in tqdm(enumerate(data_loader)):
+            counter += 1
+            image = _load_to_gpu_float(data["image"])
+            grapheme_root = _load_to_gpu_long(data["grapheme_root"])
+            vowel_diacritic = _load_to_gpu_long(data["vowel_diacritic"])
+            consonant_diacritic = _load_to_gpu_long(
+                data["consonant_diacritic"])
+            self.optimizer.zero_grad()
+            outputs = self.model(image)
+            targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
+            loss = self.loss_fn(outputs=outputs, targets=targets)
+            loss.backward()
+            self.optimizer.step()
+
+            final_loss += loss
+
+            output1, output2, output3 = outputs
+            target1, target2, target3 = targets
+            final_outputs.append(torch.cat(output1, output2, output3))
+            final_targets.append(torch.cat(target1, target2, target3))
+
+            macro_recall = metrics.macro_recall(final_outputs, final_targets)
