@@ -140,7 +140,7 @@ class BengaliTrainer(BaseTrainer):
         loss3 = self.criterion(output3, target3)
         return (loss1 + loss2 + loss3) / 3
 
-    def train(self, dataset, data_loader):
+    def train(self, dataset, data_loader) -> Tuple[float, float]:
         def _load_to_gpu_float(data):
             return data.to(self.device, dtype=torch.float)
 
@@ -169,7 +169,15 @@ class BengaliTrainer(BaseTrainer):
 
             output1, output2, output3 = outputs
             target1, target2, target3 = targets
-            final_outputs.append(torch.cat(output1, output2, output3))
-            final_targets.append(torch.cat(target1, target2, target3))
+            final_outputs.append(torch.cat((output1, output2, output3), dim=1))
+            final_targets.append(
+                torch.stack((target1, target2, target3), dim=1))
 
-            macro_recall = macro_recall(final_outputs, final_targets)
+        final_outputs = torch.cat(final_outputs)
+        final_targets = torch.cat(final_targets)
+        macro_recall = macro_recall(final_outputs, final_targets)
+
+        LOGGER.info(f'loss: {final_loss/counter')
+        LOGGER.info(f'macro_recall: {macro_recall}')
+
+        return final_loss / counter, macro_recall
