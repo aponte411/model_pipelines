@@ -10,7 +10,7 @@ from trainers import BengaliTrainer, QuoraTrainer
 LOGGER = utils.get_logger(__name__)
 
 
-def run_quora_model(params: Dict, data_path: str, fold: int):
+def run_quora_engine(params: Dict, data_path: str, fold: int):
     def preprocess_data(path: str, fold: int) -> Tuple[pd.DataFrame]:
         dataset = QuoraDataSet(path=path, target='is_duplicate')
         train, val = dataset.prepare_data(fold=fold)
@@ -27,35 +27,24 @@ def run_quora_model(params: Dict, data_path: str, fold: int):
     return trainer.predict_and_score(X_new=X_val, y_new=y_val)
 
 
-def run_bengali_model(fold: int, epochs: int) -> None:
-    def _prepare_loaders() -> Tuple[DataLoader, DataLoader]:
-        train_dataset = BengaliDataSetTrain(
-            train_path="inputs/bengali_grapheme/train-folds.csv",
-            folds=[0, 1, 2, 3],
-            image_height=137,
-            image_width=236,
-            mean=(0.485, 0.456, 0.406),
-            std=(0.229, 0.239, 0.225))
-        train_loader = DataLoader(dataset=train_dataset,
-                                  batch_size=64,
-                                  shuffle=True,
-                                  num_workers=4)
+def run_bengali_engine(training_data: str, epochs: int, params: Dict) -> None:
+    def _get_loader(train_path: str, folds: List[int],
+                    params: Dict) -> DataLoader:
+        dataset = BengaliDataSetTrain(train_path=train_path,
+                                      folds=folds,
+                                      image_height=params["image_height"],
+                                      image_width=params["image_width"],
+                                      mean=params["mean"],
+                                      std=params["std"])
+        return DataLoader(dataset=dataset,
+                          batch_size=params["batch_size"],
+                          shuffle=True,
+                          num_workers=4)
 
-        val_dataset = BengaliDataSetTrain(
-            train_path="inputs/bengali_grapheme/train-folds.csv",
-            folds=[4],
-            image_height=137,
-            image_width=236,
-            mean=(0.485, 0.456, 0.406),
-            std=(0.229, 0.239, 0.225))
-        val_loader = DataLoader(dataset=val_dataset,
-                                batch_size=64,
-                                shuffle=True,
-                                num_workers=4)
-
-        return train_loader, val_loader
-
-    train, val = _prepare_loaders()
+    train = _get_loader(train_path=training_data,
+                        folds=[0, 1, 2, 3],
+                        params=params)
+    val = _get_loader(train_path=training_data, folds=[4], params=params)
     trainer = BengaliTrainer(model_name='resnet')
     for epoch in range(epochs):
         train_loss, train_score = trainer.train(train)
@@ -79,9 +68,18 @@ def runner(competition: str, fold: int) -> Optional:
             "n_estimators": 3000,
             "tree_method": "gpu_hist"
         }
-        return run_quora_model(params=XGBOOST_PARAMS, fold=fold)
+        return run_quora_engine(params=XGBOOST_PARAMS, fold=fold)
     if competition == 'bengali':
-        run_bengali_model(fold=fold, epochs=10)
+        PARAMS = {
+            "image_height": 137,
+            "image_width": 236,
+            "mean": (0.485, 0.456, 0.406),
+            "std": (0.229, 0.239, 0.225)
+        }
+        run_bengali_engine(
+            epochs=10,
+            params=PARAMS,
+            training_data="inputs/bengali_grapheme/train-folds.csv")
 
 
 if __name__ == "__main__":
