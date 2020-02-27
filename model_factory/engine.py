@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader
 from datasets import BengaliDataSetTrain, QuoraDataSet
 from trainers import BengaliTrainer, QuoraTrainer
 
+LOGGER = utils.get_logger(__name__)
+
 
 def run_quora_model(params: Dict, data_path: str, fold: int):
     def preprocess_data(path: str, fold: int) -> Tuple[pd.DataFrame]:
@@ -25,7 +27,7 @@ def run_quora_model(params: Dict, data_path: str, fold: int):
     return trainer.predict_and_score(X_new=X_val, y_new=y_val)
 
 
-def run_bengali_model(fold: int, epochs: int):
+def run_bengali_model(fold: int, epochs: int) -> None:
     def _prepare_loaders() -> Tuple[DataLoader, DataLoader]:
         train_dataset = BengaliDataSetTrain(
             train_path="inputs/bengali_grapheme/train-folds.csv",
@@ -38,6 +40,7 @@ def run_bengali_model(fold: int, epochs: int):
                                   batch_size=64,
                                   shuffle=True,
                                   num_workers=4)
+
         val_dataset = BengaliDataSetTrain(
             train_path="inputs/bengali_grapheme/train-folds.csv",
             folds=[4],
@@ -56,9 +59,12 @@ def run_bengali_model(fold: int, epochs: int):
     trainer = BengaliTrainer(model_name='resnet')
     for epoch in range(epochs):
         train_loss, train_score = trainer.train(train)
-        val_loss, val_score = trainer.evaluate(valid_loader)
-
-    # WIP
+        val_loss, val_score = trainer.evaluate(val)
+        trainer.scheduler.step(val_loss)
+        trainer.early_stopping(val_score, trainer.model)
+        if trainer.early_stopping.early_stop:
+            LOGGER.info("Early stopping")
+            break
 
 
 @click.command()
@@ -75,7 +81,7 @@ def runner(competition: str, fold: int) -> Optional:
         }
         return run_quora_model(params=XGBOOST_PARAMS, fold=fold)
     if competition == 'bengali':
-        run_bengali_model(fold=fold)
+        run_bengali_model(fold=fold, epochs=10)
 
 
 if __name__ == "__main__":

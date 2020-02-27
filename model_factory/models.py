@@ -83,7 +83,7 @@ class XGBoostModel:
 class ResNet34(nn.Module):
     def __init__(self, pretrained: bool):
         super(ResNet34, self).__init__()
-        if pretrained is True:
+        if pretrained:
             self.model = pretrainedmodels.__dict__["resnet34"](
                 pretrained="imagenet")
         else:

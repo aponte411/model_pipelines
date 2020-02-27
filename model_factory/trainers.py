@@ -8,7 +8,10 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
+from pytorchtools import EarlyStopping
 from sklearn import metrics, preprocessing
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 
 import dispatcher
@@ -126,13 +129,16 @@ class QuoraTrainer(BaseTrainer):
 class BengaliTrainer(BaseTrainer):
     def __init__(self, model_name: str, params: Dict = None):
         super().__init__(model_name, params)
+        self.model = models.ResNet34(pretrained=True)
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.optimizer = torch.optim.Adam(self.model.parameters())
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
         self.criterion = nn.CrossEntropyLoss()
-        self.model = models.ResNet34()
+        self.early_stopping = EarlyStopping(patience=5, verbose=True)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer, mode="min", patience=5, factor=0.3, verbose=True)
 
-    def loss_fn(self, outputs, targets) -> float:
+    def _loss_fn(self, outputs, targets):
         output1, output2, output3 = outputs
         target1, target2, target3 = targets
         loss1 = self.criterion(output1, target1)
@@ -140,31 +146,30 @@ class BengaliTrainer(BaseTrainer):
         loss3 = self.criterion(output3, target3)
         return (loss1 + loss2 + loss3) / 3
 
-    def load_to_gpu_float(self, data):
+    def _load_to_gpu_float(self, data):
         return data.to(self.device, dtype=torch.float)
 
-    def load_to_gpu_long(self, data):
+    def _load_to_gpu_long(self, data):
         return data.to(self.device, dtype=torch.long)
 
-    def train(self, data_loader) -> Tuple[float, float]:
+    def train(self, data_loader: DataLoader) -> Tuple[float, float]:
         self.model.train()
         final_loss = 0
         counter = 0
         final_outputs, final_targets = [], []
         for batch, data in tqdm(enumerate(data_loader)):
             counter += 1
-            image = self.load_to_gpu_float(data["image"])
-            grapheme_root = self.load_to_gpu_long(data["grapheme_root"])
-            vowel_diacritic = self.load_to_gpu_long(data["vowel_diacritic"])
-            consonant_diacritic = self.load_to_gpu_long(
+            image = self._load_to_gpu_float(data["image"])
+            grapheme_root = self._load_to_gpu_long(data["grapheme_root"])
+            vowel_diacritic = self._load_to_gpu_long(data["vowel_diacritic"])
+            consonant_diacritic = self._load_to_gpu_long(
                 data["consonant_diacritic"])
             self.optimizer.zero_grad()
             outputs = self.model(image)
             targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
-            loss = self.loss_fn(outputs=outputs, targets=targets)
+            loss = self._loss_fn(outputs=outputs, targets=targets)
             loss.backward()
             self.optimizer.step()
-
             final_loss += loss
 
             output1, output2, output3 = outputs
@@ -178,29 +183,28 @@ class BengaliTrainer(BaseTrainer):
         macro_recall = macro_recall(final_outputs, final_targets)
 
         LOGGER.info(f'loss: {final_loss/counter}')
-        LOGGER.info(f'macro_recall: {macro_recall}')
+        LOGGER.info(f'macro-recall: {macro_recall}')
 
         return final_loss / counter, macro_recall
 
-    def evaluate(self, data_loader) -> Tuple[float, float]:
+    def evaluate(self, data_loader: DataLoader) -> Tuple[float, float]:
         with torch.no_grad():
-            model.eval()
+            self.model.eval()
             final_loss = 0
             counter = 0
             final_outputs, final_targets = [], []
             for batch, data in tqdm(enumerate(data_loader)):
                 counter += 1
-                image = self.load_to_gpu_float(data["image"])
-                grapheme_root = self.load_to_gpu_long(data["grapheme_root"])
-                vowel_diacritic = self.load_to_gpu_long(
+                image = self._load_to_gpu_float(data["image"])
+                grapheme_root = self._load_to_gpu_long(data["grapheme_root"])
+                vowel_diacritic = self._load_to_gpu_long(
                     data["vowel_diacritic"])
-                consonant_diacritic = self.load_to_gpu_long(
+                consonant_diacritic = self._load_to_gpu_long(
                     data["consonant_diacritic"])
 
                 outputs = self.model(image)
                 targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
-                loss = self.loss_fn(outputs=outputs, targets=targets)
-                final_loss += loss
+                final_loss += self._loss_fn(outputs=outputs, targets=targets)
 
                 output1, output2, output3 = outputs
                 target1, target2, target3 = targets
