@@ -47,8 +47,12 @@ def run_bengali_engine(training_data: str, epochs: int, params: Dict) -> None:
     val = _get_loader(train_path=training_data, folds=[4], params=params)
     trainer = BengaliTrainer(model_name='resnet')
     for epoch in range(epochs):
+        LOGGER.info(f'EPOCH: {epoch}')
         train_loss, train_score = trainer.train(train)
         val_loss, val_score = trainer.evaluate(val)
+        LOGGER.info(f'Train loss: {train_loss}, Train score: {train_score}')
+        LOGGER.info(
+            f'Validation loss: {val_loss}, Validation score: {val_score}')
         trainer.scheduler.step(val_loss)
         trainer.early_stopping(val_score, trainer.model)
         if trainer.early_stopping.early_stop:

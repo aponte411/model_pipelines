@@ -1,5 +1,6 @@
 import glob
-from typing import Any, List, Tuple, Dict
+import os
+from typing import Any, Dict, List, Tuple
 
 import albumentations
 import joblib
@@ -7,10 +8,10 @@ import numpy as np
 import pandas as pd
 import torch
 import torchvision
-from torch.utils.data import DataLoader, Dataset
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from PIL import Image
 from sklearn import model_selection
+from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
 import utils
@@ -209,8 +210,8 @@ class BengaliDataSetTrain(DataSet):
 
     def pickle_images(self,
                       input: str = "inputs/bengali_grapheme/train_*.parquet"):
-        for file in glob.glob(input):
-            df = pd.read_parquet(file)
+        for file_name in glob.glob(input):
+            df = pd.read_parquet(file_name)
             image_ids = df.image_id.values
             image_array = df.drop('image_id', axis=1).values
             for idx, image_id in tqdm(enumerate(image_ids),
