@@ -8,10 +8,9 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from pytorchtools import EarlyStopping
 from sklearn import metrics, preprocessing
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import dispatcher
@@ -19,6 +18,7 @@ import models
 import utils
 from dataset import DataSet
 from metrics import macro_recall
+from utils import EarlyStopping
 
 LOGGER = utils.get_logger(__name__)
 
@@ -138,12 +138,12 @@ class BengaliTrainer(BaseTrainer):
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer, mode="min", patience=5, factor=0.3, verbose=True)
 
-    def _loss_fn(self, outputs, targets):
-        output1, output2, output3 = outputs
+    def _loss_fn(self, preds, targets):
+        pred1, pred2, pred3 = preds
         target1, target2, target3 = targets
-        loss1 = self.criterion(output1, target1)
-        loss2 = self.criterion(output2, target2)
-        loss3 = self.criterion(output3, target3)
+        loss1 = self.criterion(pred1, target1)
+        loss2 = self.criterion(pred2, target2)
+        loss3 = self.criterion(pred3, target3)
         return (loss1 + loss2 + loss3) / 3
 
     def _load_to_gpu_float(self, data):
@@ -156,7 +156,7 @@ class BengaliTrainer(BaseTrainer):
         self.model.train()
         final_loss = 0
         counter = 0
-        final_outputs, final_targets = [], []
+        final_preds, final_targets = [], []
         for batch, data in tqdm(enumerate(data_loader)):
             counter += 1
             image = self._load_to_gpu_float(data["image"])
@@ -165,22 +165,22 @@ class BengaliTrainer(BaseTrainer):
             consonant_diacritic = self._load_to_gpu_long(
                 data["consonant_diacritic"])
             self.optimizer.zero_grad()
-            outputs = self.model(image)
+            predictions = self.model(image)
             targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
-            loss = self._loss_fn(outputs=outputs, targets=targets)
+            loss = self._loss_fn(preds=predictions, targets=targets)
             loss.backward()
             self.optimizer.step()
             final_loss += loss
 
-            output1, output2, output3 = outputs
+            pred1, pred2, pred3 = predictions
             target1, target2, target3 = targets
-            final_outputs.append(torch.cat((output1, output2, output3), dim=1))
+            final_preds.append(torch.cat((pred1, pred2, pred3), dim=1))
             final_targets.append(
                 torch.stack((target1, target2, target3), dim=1))
 
-        final_outputs = torch.cat(final_outputs)
+        final_preds = torch.cat(final_preds)
         final_targets = torch.cat(final_targets)
-        macro_recall = macro_recall(final_outputs, final_targets)
+        macro_recall = macro_recall(final_preds, final_targets)
 
         LOGGER.info(f'loss: {final_loss/counter}')
         LOGGER.info(f'macro-recall: {macro_recall}')
@@ -192,7 +192,7 @@ class BengaliTrainer(BaseTrainer):
             self.model.eval()
             final_loss = 0
             counter = 0
-            final_outputs, final_targets = [], []
+            final_preds, final_targets = [], []
             for batch, data in tqdm(enumerate(data_loader)):
                 counter += 1
                 image = self._load_to_gpu_float(data["image"])
@@ -202,19 +202,18 @@ class BengaliTrainer(BaseTrainer):
                 consonant_diacritic = self._load_to_gpu_long(
                     data["consonant_diacritic"])
 
-                outputs = self.model(image)
+                predictions = self.model(image)
                 targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
-                final_loss += self._loss_fn(outputs=outputs, targets=targets)
+                final_loss += self._loss_fn(preds=predictions, targets=targets)
 
-                output1, output2, output3 = outputs
+                pred1, pred2, pred3 = predictions
                 target1, target2, target3 = targets
-                final_outputs.append(
-                    torch.cat((output1, output2, output3), dim=1))
+                final_preds.append(torch.cat((pred1, pred2, pred3), dim=1))
                 final_targets.append(
                     torch.stack((target1, target2, target3), dim=1))
 
-            final_outputs = torch.cat(final_outputs)
+            final_preds = torch.cat(final_preds)
             final_targets = torch.cat(final_targets)
-            macro_recall_score = macro_recall(final_outputs, final_targets)
+            macro_recall_score = macro_recall(final_preds, final_targets)
 
         return final_loss / counter, macro_recall_score

@@ -101,9 +101,9 @@ class ResNet34(nn.Module):
         self.linear3 = nn.Linear(512, 7)
 
     def forward(self, x: torch.tensor) -> Tuple:
-        bs, _, _, _ = x.shape
+        batch_size, _, _, _ = x.shape
         x = self.model.features(x)
-        x = F.adaptive_avg_pool2d(x, 1).reshape(bs, -1)
+        x = F.adaptive_avg_pool2d(x, 1).reshape(batch_size, -1)
         linear1 = self.linear1(x)
         linear2 = self.linear2(x)
         linear3 = self.linear3(x)
@@ -259,6 +259,6 @@ class ResNet34Lightning(pl.LightningModule):
 
             final_outputs = torch.cat(final_outputs)
             final_targets = torch.cat(final_targets)
-            macro_recall_score = macro_recall(final_outputs, final_targets)
+            macro_recall_score = macro_recall(final_, final_targets)
 
         return final_loss / counter, macro_recall_score
