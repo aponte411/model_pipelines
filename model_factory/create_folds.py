@@ -26,7 +26,7 @@ def create_quora_folds(
 def create_bengali_folds(
         input_path: str = "inputs/bengali_grapheme/train.csv",
         output_path: str = "inputs/bengali_grapheme/train-folds.csv") -> None:
-    dataset = BengaliDataSetTrain()
+    dataset = BengaliDataSetTrain(train_path=input_path)
     dataset.apply_multilabel_stratified_kfold(input=input_path,
                                               output=output_path)
     LOGGER.info(dataset.train.shape)
