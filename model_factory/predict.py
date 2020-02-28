@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 import click
 import numpy as np
 
-import dataset
+import datasets
 import models
 import numerapi
 import numerox as nx
@@ -14,12 +14,10 @@ import utils
 LOGGER = utils.get_logger(__name__)
 
 
-def train_and_predict_quora_model(load_model: bool, save_model: bool) -> None:
-    train, val = dataset.DataSet(
-        path="inputs/quora_question_pairs/train-folds.csv",
-        fold=0).prepare_data()
-    y_train, y_val = dataset.DataSet().get_targets()
-    X_train, X_val = dataset.DataSet().clean_data()
+def train_and_predict_quora_model(load_model: bool, save_model: bool,
+                                  X_train: pd.DataFrame, X_val: pd.DataFrame,
+                                  y_train: pd.DataFrame,
+                                  y_val: pd.DataFrame) -> None:
     trainer = trainers.QuoraTrainer()
     saved_model_name = f'{trainer}_prediction_model.p'
     if load_model:
@@ -41,12 +39,9 @@ def train_and_predict_quora_model(load_model: bool, save_model: bool) -> None:
 @click.option('-sm', '--save-model', type=bool, default=False)
 def main(model: str, load_model: bool, save_model: bool,
          submit: bool) -> pd.DataFrame:
-
-    if model == 'quora':
-        return train_and_predict_quora_model(load_model=load_model,
-                                             save_model=save_model)
+    # WIP
+    pass
 
 
 if __name__ == "__main__":
-    predictions = main()
-    LOGGER.info(predictions)
+    main()
