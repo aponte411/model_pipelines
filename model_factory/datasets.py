@@ -19,86 +19,7 @@ import utils
 LOGGER = utils.get_logger(__name__)
 
 
-class DataSet:
-    def __init__(
-        self,
-        train_path: str,
-        target: Any,
-    ):
-        self.train_path = train_path
-        self.target = target
-        self.feats = None
-        self.fold_mapping = {
-            0: [1, 2, 3, 4],
-            1: [0, 2, 3, 4],
-            2: [0, 1, 3, 4],
-            3: [0, 1, 2, 4],
-            4: [0, 1, 2, 3],
-        }
-        self.train = None
-        self.valid = None
-        self.y_train = None
-        self.y_val = None
-
-    def _load_train_for_cv(self, input_path: str) -> pd.DataFrame:
-        train = pd.read_csv(input_path)
-        train['kfold'] = -1
-        return train
-
-    def prepare_data(self, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        LOGGER.info(f'Loading training data from: {self.train_path}')
-        LOGGER.info(f'Fold: {fold}')
-        df = pd.read_csv(self.train_path)
-        self.train = df.loc[df.kfold.isin(
-            self.fold_mapping.get(fold))].reset_index(drop=True)
-        self.valid = df.loc[df.kfold == fold]
-        del df
-
-        return self.train, self.valid
-
-    def get_targets(self) -> Tuple:
-        self.y_train = self.train[self.target].values
-        self.y_val = self.valid[self.target].values
-        return self.y_train, self.y_val
-
-    def clean_data(self,
-                   to_drop: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        self.train = self.train.drop(to_drop, axis=1).reset_index(drop=True)
-        self.valid = self.valid.drop(to_drop, axis=1).reset_index(drop=True)
-        self.valid = self.valid[self.train.columns]
-        LOGGER.info(f'Train: {self.train.shape}')
-        LOGGER.info(f'Val: {self.valid.shape}')
-        return self.train, self.valid
-
-
-class QuoraDataSet(DataSet):
-    def __init__(self,
-                 train_path="inputs/quora_question_pairs/train-folds.csv",
-                 target="is_duplicate"):
-        super().__init__(path=train_path, target=target)
-        self.train_path = train_path
-        self.target = target
-
-    def apply_stratified_kfold(self, input: str, output: str) -> None:
-        train = self._load_train_for_cv(input_path=input)
-        kf = model_selection.StratifiedKFold(n_splits=5,
-                                             shuffle=True,
-                                             random_state=123)
-        for fold, (train_idx, val_idx) in enumerate(
-                kf.split(X=train, y=train[self.target].values)):
-            LOGGER.info(f'Train index: {len(train_idx)}, Val index: {val_idx}')
-            train.loc[val_idx, 'kfold'] = fold
-
-        LOGGER.info(f'Saving train folds to disk at {output}')
-        train.to_csv(output, index=False)
-        self.train = train
-        self.feats = [
-            col for col in train.columns
-            if col != self.target and col != 'kfold'
-        ]
-
-
-class BengaliDataSetTrain(DataSet):
+class BengaliDataSetTrain:
     def __init__(self,
                  train_path: str,
                  target: List[str] = [
@@ -109,7 +30,8 @@ class BengaliDataSetTrain(DataSet):
                  image_width: int = None,
                  mean: float = None,
                  std: float = None):
-        super().__init__(train_path=train_path, target=target)
+        self.train_path = train_path
+        self.target = target
         self.folds = folds
         self.image_height = image_height
         self.image_width = image_width
@@ -184,38 +106,3 @@ class BengaliDataSetTrain(DataSet):
         image = _prepare_image()
         image = _augment_image(image=image)
         return _return_image_dict(image=image)
-
-    def _split_data(self,
-                    train: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        X = train.image_id.values
-        y = train[self.target].values
-        return X, y
-
-    def apply_multilabel_stratified_kfold(self, input: str,
-                                          output: str) -> None:
-        train = self._load_train_for_cv(input_path=input)
-        X, y = self._split_data(train=train)
-        mskf = MultilabelStratifiedKFold(n_splits=5)
-        for fold, (train_idx, val_idx) in enumerate(mskf.split(X, y)):
-            LOGGER.info(f'Train index: {len(train_idx)}, Val index: {val_idx}')
-            train.loc[val_idx, 'kfold'] = fold
-
-        LOGGER.info(f'Saving train folds to disk at {output}')
-        train.to_csv(output, index=False)
-        self.train = train
-        self.feats = [
-            col for col in train.columns
-            if col not in self.target and col not in ['kfold', 'grapheme']
-        ]
-
-    def pickle_images(self,
-                      input: str = "inputs/bengali_grapheme/train_*.parquet"):
-        for file_name in glob.glob(input):
-            df = pd.read_parquet(file_name)
-            image_ids = df.image_id.values
-            image_array = df.drop('image_id', axis=1).values
-            for idx, image_id in tqdm(enumerate(image_ids),
-                                      total=len(image_ids)):
-                joblib.dump(
-                    image_array[idx, :],
-                    f"inputs/bengali_grapheme/pickled_images/{image_id}.p")

@@ -1,12 +1,15 @@
+import glob
 import logging
 import os
 from typing import Any, List, Tuple
 
 import boto3
+import joblib
 import numpy as np
 import pandas as pd
 import torch
 from boto3.s3 import transfer
+from tqdm import tqdm
 
 from configs import __config__
 
@@ -105,3 +108,13 @@ class EarlyStopping:
             )
         torch.save(model.state_dict(), 'checkpoint.pt')
         self.val_loss_min = val_loss
+
+
+def pickle_images(input: str = "inputs/bengali_grapheme/train_*.parquet",
+                  output_dir: str = "inputs/bengali_grapheme/pickled_images"):
+    for file_name in glob.glob(input):
+        df = pd.read_parquet(file_name)
+        image_ids = df.image_id.values
+        image_array = df.drop('image_id', axis=1).values
+        for idx, image_id in tqdm(enumerate(image_ids), total=len(image_ids)):
+            joblib.dump(image_array[idx, :], f"{output_dir}/{image_id}.p")
