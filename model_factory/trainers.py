@@ -16,7 +16,7 @@ from tqdm import tqdm
 import dispatcher
 import models
 import utils
-from dataset import DataSet
+from datasets import DataSet
 from metrics import macro_recall
 from utils import EarlyStopping
 
@@ -43,31 +43,24 @@ class BaseTrainer:
     def get_model(self):
         return self.model
 
-    @abstractmethod
     def load_model_locally(self):
         pass
 
-    @abstractmethod
     def load_model_from_s3(self):
         pass
 
-    @abstractmethod
     def train_model(self):
         pass
 
-    @abstractmethod
     def predict(self):
         pass
 
-    @abstractmethod
     def predict_and_score(self):
         pass
 
-    @abstractmethod
     def save_model_locally(self):
         pass
 
-    @abstractmethod
     def save_model_to_s3(self):
         pass
 
@@ -81,11 +74,11 @@ class QuoraTrainer(BaseTrainer):
 
     def load_model_locally(self, key: str):
         LOGGER.info(f"Using saved model for {self.tournament}")
-        self.model = models.XGBoostModel()
+        self.model = dispatcher.MODELS['randomforest']
         self.model.load(key)
 
     def load_from_s3(self, filename: str, key: str):
-        self.model = models.XGBoostModel()
+        self.model = dispatcher.MODELS['randomforest']
         self.model.load_from_s3(filename=filename, key=key)
         self.model = self.model.load(key)
         LOGGER.info(
@@ -93,18 +86,8 @@ class QuoraTrainer(BaseTrainer):
 
     def train_model(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
                     X_val: pd.DataFrame, y_val: pd.DataFrame):
-        LOGGER.info("Building XGBoostModel from scratch")
-        if self.params["tree_method"] == 'gpu_hist':
-            LOGGER.info(f"Training XGBoost with GPU's")
-        self.model = models.XGBoostModel(
-            max_depth=self.params["max_depth"],
-            learning_rate=self.params["learning_rate"],
-            l2=self.params["l2"],
-            n_estimators=self.params["n_estimators"],
-            tree_method=self.params["tree_method"])
-        LOGGER.info(f"Training XGBoost model..")
-        eval_set = [(X_val, y_val)]
-        self.model.fit(X=X_train, y=y_train, eval_set=eval_set)
+        LOGGER.info("Building model from scratch")
+        self.model.fit(X_train, y_train)
 
     def predict(self, X_new: pd.DataFrame) -> pd.Series:
         LOGGER.info(f'Making predictions..')
