@@ -1,4 +1,5 @@
 import os
+from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 
 import joblib
@@ -32,12 +33,20 @@ class BaseTrainer:
         self.model_name = model_name
         self.params = params
         self.model = None
+        self.model_path = None
 
     def __repr__(self):
         return self.model_name
 
     def __str__(self):
         return self.model_name
+
+    @abstractmethod
+    def train(self):
+        pass
+
+    def get_model_path(self):
+        return self.model_path
 
     def get_model(self):
         return self.model
@@ -46,9 +55,6 @@ class BaseTrainer:
         pass
 
     def load_model_from_s3(self):
-        pass
-
-    def train_model(self):
         pass
 
     def predict(self):
@@ -66,7 +72,7 @@ class BaseTrainer:
 
 class QuoraTrainer(BaseTrainer):
     def __init__(self, model_name: str, params: Dict):
-        super().__init__(model_name=model_name, params=params)
+        super().__init__(model_name, params)
         self.model_name = model_name
         self.params = params
         self.model = None
@@ -83,8 +89,8 @@ class QuoraTrainer(BaseTrainer):
         LOGGER.info(
             f"Trained model loaded from s3 bucket: {os.environ['BUCKET']}")
 
-    def train_model(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
-                    X_val: pd.DataFrame, y_val: pd.DataFrame):
+    def train(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
+              X_val: pd.DataFrame, y_val: pd.DataFrame):
         LOGGER.info("Building model from scratch")
         self.model.fit(X_train, y_train)
 
@@ -134,6 +140,32 @@ class BengaliTrainer(BaseTrainer):
     def _load_to_gpu_long(self, data):
         return data.to(self.device, dtype=torch.long)
 
+    def _get_image(self, data):
+        return self._load_to_gpu_float(data["image"])
+
+    def _get_targets(self, data) -> List:
+        grapheme_root = self._load_to_gpu_long(data["grapheme_root"])
+        vowel_diacritic = self._load_to_gpu_long(data["vowel_diacritic"])
+        consonant_diacritic = self._load_to_gpu_long(
+            data["consonant_diacritic"])
+        return [grapheme_root, vowel_diacritic, consonant_diacritic]
+
+    @staticmethod
+    def score(preds, targets) -> float:
+        final_preds = torch.cat(preds)
+        final_targets = torch.cat(targets)
+        return macro_recall(final_preds, final_targets)
+
+    @staticmethod
+    def concat_tensors(tensor) -> torch.tensor:
+        one, two, three = tensor
+        return torch.cat((one, two, three), dim=1)
+
+    @staticmethod
+    def stack_tensors(tensor) -> torch.tensor:
+        one, two, three = tensor
+        return torch.stack((one, two, three), dim=1)
+
     def train(self, data_loader: DataLoader) -> Tuple[float, float]:
         self.model.train()
         final_loss = 0
@@ -141,33 +173,23 @@ class BengaliTrainer(BaseTrainer):
         final_preds, final_targets = [], []
         for batch, data in tqdm(enumerate(data_loader)):
             counter += 1
-            image = self._load_to_gpu_float(data["image"])
-            grapheme_root = self._load_to_gpu_long(data["grapheme_root"])
-            vowel_diacritic = self._load_to_gpu_long(data["vowel_diacritic"])
-            consonant_diacritic = self._load_to_gpu_long(
-                data["consonant_diacritic"])
+            image = self._get_image(data=data)
+            targets = self._get_targets(data=data)
             self.optimizer.zero_grad()
             predictions = self.model(image)
-            targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
             loss = self._loss_fn(preds=predictions, targets=targets)
             loss.backward()
             self.optimizer.step()
             final_loss += loss
+            final_preds.append(self.concat_tensors(tensor=predictions))
+            final_targets.append(self.stack_tensors(tensor=targets))
 
-            pred1, pred2, pred3 = predictions
-            target1, target2, target3 = targets
-            final_preds.append(torch.cat((pred1, pred2, pred3), dim=1))
-            final_targets.append(
-                torch.stack((target1, target2, target3), dim=1))
-
-        final_preds = torch.cat(final_preds)
-        final_targets = torch.cat(final_targets)
-        macro_recall = macro_recall(final_preds, final_targets)
-
+        macro_recall_score = self.score(preds=final_preds,
+                                        targets=final_targets)
         LOGGER.info(f'loss: {final_loss/counter}')
-        LOGGER.info(f'macro-recall: {macro_recall}')
+        LOGGER.info(f'macro-recall: {macro_recall_score}')
 
-        return final_loss / counter, macro_recall
+        return final_loss / counter, macro_recall_score
 
     def evaluate(self, data_loader: DataLoader) -> Tuple[float, float]:
         with torch.no_grad():
@@ -177,25 +199,16 @@ class BengaliTrainer(BaseTrainer):
             final_preds, final_targets = [], []
             for batch, data in tqdm(enumerate(data_loader)):
                 counter += 1
-                image = self._load_to_gpu_float(data["image"])
-                grapheme_root = self._load_to_gpu_long(data["grapheme_root"])
-                vowel_diacritic = self._load_to_gpu_long(
-                    data["vowel_diacritic"])
-                consonant_diacritic = self._load_to_gpu_long(
-                    data["consonant_diacritic"])
-
+                image = self._get_image(data=data)
+                targets = self._get_targets(data=data)
                 predictions = self.model(image)
-                targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
                 final_loss += self._loss_fn(preds=predictions, targets=targets)
+                final_preds.append(self.concat_tensors(tensor=predictions))
+                final_targets.append(self.stack_tensors(tensor=targets))
 
-                pred1, pred2, pred3 = predictions
-                target1, target2, target3 = targets
-                final_preds.append(torch.cat((pred1, pred2, pred3), dim=1))
-                final_targets.append(
-                    torch.stack((target1, target2, target3), dim=1))
-
-            final_preds = torch.cat(final_preds)
-            final_targets = torch.cat(final_targets)
-            macro_recall_score = macro_recall(final_preds, final_targets)
+            macro_recall_score = self.score(preds=final_preds,
+                                            targets=final_targets)
+        LOGGER.info(f'loss: {final_loss/counter}')
+        LOGGER.info(f'macro-recall: {macro_recall_score}')
 
         return final_loss / counter, macro_recall_score

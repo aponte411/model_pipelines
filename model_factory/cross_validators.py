@@ -49,7 +49,8 @@ class CrossValidator:
         y_val = valid[self.target].values
         return y_train, y_val
 
-    def clean_data(self, train: pd.DataFrame, valid: pd.DataFrame,
+    @staticmethod
+    def clean_data(train: pd.DataFrame, valid: pd.DataFrame,
                    to_drop: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
         train = train.drop(to_drop, axis=1).reset_index(drop=True)
         valid = valid.drop(to_drop, axis=1).reset_index(drop=True)

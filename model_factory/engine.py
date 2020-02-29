@@ -12,15 +12,15 @@ LOGGER = utils.get_logger(__name__)
 
 
 def get_loader(train_path: str, folds: List[int], params: Dict) -> DataLoader:
-    """[summary]
-    
+    """Converts a datasets object into a DataLoader.
+
     Arguments:
-        train_path {str} -- [path to train-fold.csv file]
-        folds {List[int]} -- [the key for the fold_mapping dictionary]
-        params {Dict} -- [parameter dictionary]
-    
+        train_path {str} -- path to train-fold.csv file
+        folds {List[int]} -- the key for the fold_mapping dictionary
+        params {Dict} -- parameter dictionary
+
     Returns:
-        DataLoader -- [description]
+        DataLoader -- torch.utils.data.DataLoader object
     """
     dataset = BengaliDataSetTrain(train_path=train_path,
                                   folds=folds,
@@ -35,18 +35,19 @@ def get_loader(train_path: str, folds: List[int], params: Dict) -> DataLoader:
 
 
 def run_bengali_engine(training_data: str, epochs: int, params: Dict) -> None:
-    """[summary]
+    """Trains a ResNet34 model for the BengaliAI bengali grapheme competiton.
 
     Arguments:
-        training_data {str} -- [path to train-folds.csv file]
-        epochs {int} -- [number of epochs you want to train the classifier]
-        params {Dict} -- [parameter dictionary]
+        training_data {str} -- path to train-folds.csv file
+        epochs {int} -- number of epochs you want to train the classifier
+        params {Dict} -- parameter dictionary
     """
     train = get_loader(train_path=training_data,
                        folds=[0, 1, 2, 3],
                        params=params)
     val = get_loader(train_path=training_data, folds=[4], params=params)
     trainer = BengaliTrainer(model_name='resnet')
+    model_path = f'trained_models/{trainer}_bengali.p'
     for epoch in range(epochs):
         LOGGER.info(f'EPOCH: {epoch}')
         train_loss, train_score = trainer.train(train)
@@ -57,8 +58,10 @@ def run_bengali_engine(training_data: str, epochs: int, params: Dict) -> None:
         trainer.scheduler.step(val_loss)
         trainer.early_stopping(val_score, trainer.model)
         if trainer.early_stopping.early_stop:
-            LOGGER.info("Early stopping")
+            LOGGER.info(f"Early stopping at epoch: {epoch}")
+            trainer.save_model_locally(key=model_path)
             break
+        trainer.save_model_locally(key=model_path)
 
 
 @click.command()

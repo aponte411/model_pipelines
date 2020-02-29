@@ -35,7 +35,7 @@ LOGGER = utils.get_logger(__name__)
 
 class ResNet34(nn.Module):
     def __init__(self, pretrained: bool):
-        super(ResNet34, self).__init__()
+        super().__init__()
         if pretrained:
             self.model = pretrainedmodels.__dict__["resnet34"](
                 pretrained="imagenet")
@@ -67,9 +67,9 @@ class ResNet34Lightning(pl.LightningModule):
         self.linear3 = nn.Linear(512, 7)
 
     def forward(self, x: torch.tensor) -> Tuple:
-        bs, _, _, _ = x.shape
+        batch_size, _, _, _ = x.shape
         x = self.model.features(x)
-        x = F.adaptive_avg_pool2d(x, 1).reshape(bs, -1)
+        x = F.adaptive_avg_pool2d(x, 1).reshape(batch_size, -1)
         linear1 = self.linear1(x)
         linear2 = self.linear2(x)
         linear3 = self.linear3(x)

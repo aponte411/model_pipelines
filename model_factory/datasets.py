@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import torch
 import torchvision
-from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from PIL import Image
 from sklearn import model_selection
 from torch.utils.data import DataLoader, Dataset
