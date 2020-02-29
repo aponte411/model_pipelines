@@ -1,6 +1,6 @@
 import click
 
-from engine import BengaliEngine
+from engines import BengaliEngine
 from trainers import BengaliTrainer
 from models import ResNet34
 
