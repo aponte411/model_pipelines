@@ -23,23 +23,17 @@ from utils import EarlyStopping
 LOGGER = utils.get_logger(__name__)
 
 
-class BaseTrainer:
-    """Base class for handling training/inference"""
-    def __init__(
-        self,
-        model_name: str,
-        params: Dict = None,
-    ):
-        self.model_name = model_name
-        self.params = params
+class Trainer:
+    """Base class for training/inference
+
+    Arguments:
+        model {Any} -- object from models module.
+    """
+    def __init__(self, model: Any, **kwds):
+        super().__init__(**kwds)
+        self.model = model
         self.model = None
         self.model_path = None
-
-    def __repr__(self):
-        return self.model_name
-
-    def __str__(self):
-        return self.model_name
 
     @abstractmethod
     def train(self):
@@ -70,12 +64,10 @@ class BaseTrainer:
         pass
 
 
-class QuoraTrainer(BaseTrainer):
-    def __init__(self, model_name: str, params: Dict):
-        super().__init__(model_name, params)
-        self.model_name = model_name
-        self.params = params
-        self.model = None
+class QuoraTrainer(Trainer):
+    def __init__(self, model: Any, **kwds):
+        super().__init__(model, **kwds)
+        self.model = model
 
     def load_model_locally(self, key: str):
         LOGGER.info(f"Using saved model for {self.tournament}")
@@ -114,10 +106,10 @@ class QuoraTrainer(BaseTrainer):
         self.model.save_to_s3(filename=filename, key=key)
 
 
-class BengaliTrainer(BaseTrainer):
-    def __init__(self, model_name: str, params: Dict = None):
-        super().__init__(model_name, params)
-        self.model = models.ResNet34(pretrained=True)
+class BengaliTrainer(Trainer):
+    def __init__(self, model: Any, **kwds):
+        super().__init__(model, **kwds)
+        self.model = model
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)

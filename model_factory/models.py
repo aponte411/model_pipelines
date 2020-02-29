@@ -34,14 +34,13 @@ LOGGER = utils.get_logger(__name__)
 
 
 class ResNet34(nn.Module):
-    def __init__(self, pretrained: bool):
-        super().__init__()
+    def __init__(self, pretrained: bool, **kwds):
+        super().__init__(**kwds)
         if pretrained:
             self.model = pretrainedmodels.__dict__["resnet34"](
                 pretrained="imagenet")
         else:
             self.model = pretrainedmodels.__dict__["resnet34"](pretrained=None)
-
         self.linear1 = nn.Linear(512, 168)
         self.linear2 = nn.Linear(512, 11)
         self.linear3 = nn.Linear(512, 7)

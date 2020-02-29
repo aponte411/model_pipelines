@@ -14,7 +14,8 @@ LOGGER = get_logger(__name__)
 
 
 class CrossValidator:
-    def __init__(self, input_path: str, output_path: str, target: Any):
+    def __init__(self, input_path: str, output_path: str, target: Any, **kwds):
+        super().__init__(**kwds)
         self.input_path = input_path
         self.output_path = output_path
         self.target = target
@@ -61,8 +62,11 @@ class CrossValidator:
 
 
 class QuoraCrossValidator(CrossValidator):
-    def __init__(self, input_path: str, output_path: str, target: str):
-        super().__init__(input_path, output_path, target)
+    def __init__(self, input_path: str, output_path: str, target: str, **kwds):
+        super().__init__(input_path, output_path, target, **kwds)
+        self.input_path = input_path
+        self.output_path = output_path
+        self.target = target
 
     def apply_stratified_kfold(self) -> None:
         train = self._load_train_for_cv(input_path=self.input_path)
@@ -79,8 +83,11 @@ class QuoraCrossValidator(CrossValidator):
 
 
 class BengaliCrossValidator(CrossValidator):
-    def __init__(self, input_path: str, output_path: str, target: str):
-        super().__init__(input_path, output_path, target)
+    def __init__(self, input_path: str, output_path: str, target: str, **kwds):
+        super().__init__(input_path, output_path, target, **kwds)
+        self.input_path = input_path
+        self.output_path = output_path
+        self.target = target
 
     def _split_data(self,
                     train: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
