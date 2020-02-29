@@ -4,30 +4,48 @@ import click
 import torch
 from torch.utils.data import DataLoader
 
+import utils
 from datasets import BengaliDataSetTrain
 from trainers import BengaliTrainer
 
 LOGGER = utils.get_logger(__name__)
 
 
-def run_bengali_engine(training_data: str, epochs: int, params: Dict) -> None:
-    def _get_loader(train_path: str, folds: List[int],
-                    params: Dict) -> DataLoader:
-        dataset = BengaliDataSetTrain(train_path=train_path,
-                                      folds=folds,
-                                      image_height=params["image_height"],
-                                      image_width=params["image_width"],
-                                      mean=params["mean"],
-                                      std=params["std"])
-        return DataLoader(dataset=dataset,
-                          batch_size=params["batch_size"],
-                          shuffle=True,
-                          num_workers=4)
+def get_loader(train_path: str, folds: List[int], params: Dict) -> DataLoader:
+    """[summary]
+    
+    Arguments:
+        train_path {str} -- [path to train-fold.csv file]
+        folds {List[int]} -- [the key for the fold_mapping dictionary]
+        params {Dict} -- [parameter dictionary]
+    
+    Returns:
+        DataLoader -- [description]
+    """
+    dataset = BengaliDataSetTrain(train_path=train_path,
+                                  folds=folds,
+                                  image_height=params["image_height"],
+                                  image_width=params["image_width"],
+                                  mean=params["mean"],
+                                  std=params["std"])
+    return DataLoader(dataset=dataset,
+                      batch_size=params["batch_size"],
+                      shuffle=True,
+                      num_workers=4)
 
-    train = _get_loader(train_path=training_data,
-                        folds=[0, 1, 2, 3],
-                        params=params)
-    val = _get_loader(train_path=training_data, folds=[4], params=params)
+
+def run_bengali_engine(training_data: str, epochs: int, params: Dict) -> None:
+    """[summary]
+
+    Arguments:
+        training_data {str} -- [path to train-folds.csv file]
+        epochs {int} -- [number of epochs you want to train the classifier]
+        params {Dict} -- [parameter dictionary]
+    """
+    train = get_loader(train_path=training_data,
+                       folds=[0, 1, 2, 3],
+                       params=params)
+    val = get_loader(train_path=training_data, folds=[4], params=params)
     trainer = BengaliTrainer(model_name='resnet')
     for epoch in range(epochs):
         LOGGER.info(f'EPOCH: {epoch}')
