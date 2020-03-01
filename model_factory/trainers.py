@@ -204,3 +204,6 @@ class BengaliTrainer(Trainer):
         LOGGER.info(f'macro-recall: {macro_recall_score}')
 
         return final_loss / counter, macro_recall_score
+
+    def inference(self, data_loader):
+        pass

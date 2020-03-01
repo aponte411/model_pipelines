@@ -105,3 +105,58 @@ class BengaliDataSetTrain:
         image = _prepare_image()
         image = _augment_image(image=image)
         return _return_image_dict(image=image)
+
+
+class BengaliDataSetTest:
+    def __init__(self,
+                 df: pd.DataFrame,
+                 image_height: int = None,
+                 image_width: int = None,
+                 mean: float = None,
+                 std: float = None):
+        self.df = df
+        self.image_height = image_height
+        self.image_width = image_width
+        self.mean = mean
+        self.std = std
+        self._create_attributes()
+        self._create_augmentations()
+
+    def _create_attributes(self) -> None:
+        self.image_ids = self.df.image_id.values
+        self.image_arr = self.df.iloc[:, 1:].values
+
+    def _create_augmentations(self) -> None:
+        self.aug = albumentations.Compose([
+            albumentations.Resize(self.image_height,
+                                  self.image_width,
+                                  always_apply=True),
+            albumentations.Normalize(self.mean, self.std, always_apply=True)
+        ])
+
+    def __len__(self):
+        return len(self.image_ids)
+
+    def __getitem__(self, item: int) -> Dict:
+        def _prepare_image() -> Image:
+            image = self.image_arr[item, :]
+            image = image.reshape(137, 236).astype(float)
+            return Image.fromarray(image).convert("RGB")
+
+        def _augment_image(image) -> np.array:
+            image = self.aug(image=np.array(image))["image"]
+            return np.transpose(image, (2, 0, 1)).astype(np.float32)
+
+        def _get_image_id() -> int:
+            return self.image_id[item]
+
+        def _return_image_dict(image, image_id) -> Dict:
+            return {
+                "image": torch.tensor(image, dtype=torch.float),
+                "image_id": image_id
+            }
+
+        image = _prepare_image()
+        image = _augment_image(image=image)
+        image_id = _get_image_id()
+        return _return_image_dict(image=image, image_id=image_id)

@@ -11,8 +11,11 @@ def runner(data: str) -> Optional:
     if data == 'bengali':
         PARAMS = {
             "train_path": "inputs/bengali_grapheme/train-folds.csv",
+            "test_path": "inputs/bengali_grapheme",
             "image_height": 137,
             "image_width": 236,
+            "batch_size": 64,
+            "test_batch_size": 64,
             "mean": (0.485, 0.456, 0.406),
             "std": (0.229, 0.239, 0.225),
             "train_folds": [0, 1, 2, 3],
@@ -23,7 +26,7 @@ def runner(data: str) -> Optional:
         bengali = BengaliEngine(name='bengali-engine',
                                 trainer=trainer,
                                 params=PARAMS)
-        bengali.run_engine()
+        bengali.run_training_engine()
 
 
 if __name__ == "__main__":

@@ -1,15 +1,16 @@
 from typing import Dict, List, Optional, Tuple
 
 import click
+import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
 import utils
-from datasets import BengaliDataSetTrain
-from trainers import BengaliTrainer
+from datasets import BengaliDataSetTest, BengaliDataSetTrain
+from trainers import BengaliTrainer, Trainer
 
 LOGGER = utils.get_logger(__name__)
-from trainers import Trainer
 
 
 class BengaliEngine:
@@ -17,22 +18,46 @@ class BengaliEngine:
         super().__init__(**kwds)
         self.name = name
         self.trainer = trainer
-        self.dataset = BengaliDataSetTrain
+        self.training_set = BengaliDataSetTrain
+        self.test_set = BengaliDataSetTest
         self.params = params
 
-    def _get_loader(self, folds: List[int]) -> DataLoader:
-        self.dataset = self.dataset(train_path=self.params["train_path"],
-                                    folds=folds,
-                                    image_height=self.params["image_height"],
-                                    image_width=self.params["image_width"],
-                                    mean=self.params["mean"],
-                                    std=self.params["std"])
-        return DataLoader(dataset=self.dataset,
+    def _get_training_loader(self, folds: List[int]) -> DataLoader:
+        self.dataset = self.training_set(
+            train_path=self.params["train_path"],
+            folds=folds,
+            image_height=self.params["image_height"],
+            image_width=self.params["image_width"],
+            mean=self.params["mean"],
+            std=self.params["std"])
+        return DataLoader(dataset=self.training_dataset,
                           batch_size=self.params["batch_size"],
                           shuffle=True,
                           num_workers=4)
 
-    def run_engine(self, load: bool = False, save: bool = True) -> None:
+    def _get_all_testing_loaders(self):
+        def _get_loader(df: pd.DataFrame) -> DataLoader:
+            self.test_set = self.test_set(
+                df=df,
+                image_height=self.params["image_height"],
+                image_width=self.params["image_width"],
+                mean=self.params["mean"],
+                std=self.params["std"])
+            return DataLoader(dataset=self.test_set,
+                              batch_size=self.params["test_batch_size"],
+                              shuffle=False,
+                              num_workers=4)
+
+        loaders = []
+        for idx in range(4):
+            df = pd.read_parquet(
+                f"{self.params['test_path']}/test_image_data_{idx}.parquet")
+            loaders.append(_get_loader(df=df))
+        return loaders
+
+    def run_training_engine(self,
+                            load: bool = False,
+                            save: bool = True) -> None:
         """Trains a ResNet34 model for the BengaliAI bengali grapheme competiton.
 
         Arguments:
@@ -40,8 +65,8 @@ class BengaliEngine:
             epochs {int} -- number of epochs you want to train the classifier
             params {Dict} -- parameter dictionary
         """
-        train = self._get_loader(folds=self.params["train_folds"])
-        val = self._get_loader(folds=self.params["val_folds"])
+        train = self._get_training_loader(folds=self.params["train_folds"])
+        val = self._get_training_loader(folds=self.params["val_folds"])
         model_name = f"{self.trainer}_bengali.p"
         model_path = f'trained_models/{model_name}'
         for epoch in range(self.params["epochs"]):
@@ -61,3 +86,67 @@ class BengaliEngine:
                 break
 
         self.trainer.save_model_locally(key=model_path)
+
+    def _inference(self) -> Dict:
+        predictions = {}
+        testing_loaders = self._get_all_testing_loaders()
+        for loader in testing_loaders:
+            for batch, data in enumerate(loader):
+                image = data["image"]
+                img_id = data["image_id"]
+                image = image.to(self.trainer.device, dtype=torch.float)
+                grapheme, vowel, consonant = self.trainer.model(image)
+                for idx, image_id in enumerate(img_id):
+                    predictions["grapheme"] = grapheme[idx].cpu().detach(
+                    ).numpy()
+                    predictions["vowel"] = vowel[idx].cpu().detach().numpy()
+                    predictions["consonant"] = consonant[idx].cpu().detach(
+                    ).numpy()
+                    predictions["image_id"] = image_id
+
+        return predictions
+
+    def run_inference_engine(self) -> Dict:
+        def _get_final_preds(preds: Dict):
+            return {
+                "final_grapheme":
+                np.argmax(np.mean(np.array(final_predictions["grapheme"]),
+                                  axis=0),
+                          axis=1),
+                "final_vowel":
+                np.argmax(np.mean(np.array(final_predictions["vowel"]),
+                                  axis=0),
+                          axis=1),
+                "final_consonant":
+                np.argmax(np.mean(np.array(final_predictions["consonant"]),
+                                  axis=0),
+                          axis=1)
+            }
+
+        def _create_submission_df(pred_dict: Dict):
+            predictions = []
+            for idx, image_id in enumerate(pred_dict["image_id"]):
+                predictions.append((f"{image_id}_grapheme_root",
+                                    pred_dict["final_grapheme"][idx]))
+                predictions.append((f"{image_id}_vowel_diacritic",
+                                    pred_dict["final_vowel"][idx]))
+                predictions.append((f"{image_id}_consonant_diacritic",
+                                    pred_dict["final_consonant"][idx]))
+
+            return pd.DataFrame(predictions, columns=["row_id", "target"])
+
+        final_predictions = {}
+        for idx in range(5):
+            self.trainer.model.load_state_dict(
+                torch.load(f"../input/resnet34weights/resnet34_fold{idx}.pth"))
+            self.trainer.model.to(self.trainer.device)
+            self.trainer.model.eval()
+            predictions = self._inference()
+            final_predictions["grapheme"] = predictions["grapheme"]
+            final_predictions["vowel"] = predictions["vowel"]
+            final_predictions["consonant"] = predictions["consonant"]
+            if idx == 0:
+                final_predictions["image_id"] = predictions["image_id"]
+
+        pred_dictionary = _get_final_preds(preds=final_predictions)
+        return _create_submission_df(preds=pred_dictionary)
