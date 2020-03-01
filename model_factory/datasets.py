@@ -19,14 +19,26 @@ LOGGER = utils.get_logger(__name__)
 
 
 class BengaliDataSetTrain:
+    """
+    Dataset for training/validation.
+
+    Arguments:
+        train_path {str} - path to train-folds.csv
+        pickle_path {str} - path to pickled images
+        folds {List[int]} - key for dataset fold
+        image_height {int} - height of images
+        image_width {int} - width of images
+        mean {Tuple[float]} - mean for image augmentation
+        std {Tuple[float]} - variance for image augmentation
+    """
     def __init__(self,
                  train_path: str,
                  pickle_path: str = None,
-                 folds: Any = [0],
+                 folds: List[int] = [0],
                  image_height: int = None,
                  image_width: int = None,
-                 mean: float = None,
-                 std: float = None):
+                 mean: Tuple[float] = None,
+                 std: Tuple[float] = None):
         self.train_path = train_path
         self.folds = folds
         self.image_height = image_height
@@ -79,7 +91,8 @@ class BengaliDataSetTrain:
     def __getitem__(self, item: int) -> Dict:
         def _prepare_image() -> Image:
             image = joblib.load(f"{self.pickle_path}/{self.image_ids[item]}.p")
-            image = image.reshape(137, 236).astype(float)
+            image = image.reshape(self.image_height,
+                                  self.image_width).astype(float)
             return Image.fromarray(image).convert("RGB")
 
         def _augment_image(image) -> np.array:
@@ -104,6 +117,16 @@ class BengaliDataSetTrain:
 
 
 class BengaliDataSetTest:
+    """
+    Dataset for inference.
+
+    Arguments: 
+        df {pd.DataFrame} - parquet dataframe with test images
+        image_height {int} - height of images
+        image_width {int} - width of images
+        mean {Tuple[float]} - mean for image augmentation
+        std {Tuple[float]} - variance for image augmentation
+    """
     def __init__(self,
                  df: pd.DataFrame,
                  image_height: int = None,

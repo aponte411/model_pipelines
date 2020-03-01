@@ -18,6 +18,11 @@ class BengaliEngine:
     The BengaliEngine will combine trainers, datasets, and models
     into a single object that contains functionality to train models
     and conduct inference.
+
+    Arguments:
+        name {str} - name of engine
+        trainer {Trainer} - Trainer object that handles training
+        params {Dict} - parameter dictionary
     """
     def __init__(self, name: str, trainer: Trainer, params: Dict, **kwds):
         super().__init__(**kwds)
@@ -33,6 +38,7 @@ class BengaliEngine:
     def _get_training_loader(self, folds: List[int]) -> DataLoader:
         self.dataset = self.training_set(
             train_path=self.params["train_path"],
+            pickle_path=self.params["pickle_path"],
             folds=folds,
             image_height=self.params["image_height"],
             image_width=self.params["image_width"],
