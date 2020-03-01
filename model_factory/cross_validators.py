@@ -95,7 +95,7 @@ class BengaliCrossValidator(CrossValidator):
         y = train[self.target].values
         return X, y
 
-    def apply_multilabel_stratified_kfold(self) -> None:
+    def apply_multilabel_stratified_kfold(self, save: bool = True) -> None:
         train = self._load_train_for_cv(input_path=self.input_path)
         X, y = self._split_data(train=train)
         mskf = MultilabelStratifiedKFold(n_splits=5)
@@ -104,4 +104,6 @@ class BengaliCrossValidator(CrossValidator):
             train.loc[val_idx, 'kfold'] = fold
 
         LOGGER.info(f'Saving train folds to disk at {self.output_path}')
-        train.to_csv(self.output_path, index=False)
+        if save:
+            train.to_csv(self.output_path, index=False)
+        return train
