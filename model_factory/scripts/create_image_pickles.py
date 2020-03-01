@@ -12,7 +12,7 @@ LOGGER = utils.get_logger(__name__)
 @click.option('-ou',
               '--output',
               type=str,
-              default="inputs/bengali_grapheme/train_*.parquet")
+              default="inputs/bengali_grapheme/pickled_images")
 def main(input: str, output: str):
     utils.pickle_images(input=input, output_dir=output)
 
