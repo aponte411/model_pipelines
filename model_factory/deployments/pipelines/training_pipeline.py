@@ -1,21 +1,29 @@
 import utils
-
-from model_factory.trainers import QuoraTrainer
-from model_factory.dataset import DataSet
+from engines import BengaliEngine
+from models import ResNet34
+from trainers import BengaliTrainer
 
 LOGGER = utils.get_logger(__name__)
 
 
-def train_model(model_name: str, path: str, fold: int) -> Any:
-    trainer = QuoraTrainer()
-    dataset = DataSet(path=path, fold=fold)
-    train, val = dataset.prepare_data()
-    y_train, y_val = dataset.get_targets()
-    X_train, X_val = dataset.clean_data()
-    LOGGER.info(f"Training {model_name}..")
-    trainer.train_model(X_train=X_train,
-                        y_train=y_train,
-                        X_val=X_val,
-                        y_val=y_val)
+def runner(data: str) -> Optional:
+    PARAMS = {
+        "image_height": 137,
+        "image_width": 236,
+        "mean": (0.485, 0.456, 0.406),
+        "std": (0.229, 0.239, 0.225),
+        "train_folds": [0, 1, 2, 3],
+        "val_folds": [4]
+    }
+    model = ResNet34(pretrained=True)
+    trainer = BengaliTrainer(model=model)
+    bengali = BengaliEngine(name='bengali-engine',
+                            trainer=trainer,
+                            params=PARAMS)
+    LOGGER.info(f"Training model..")
+    bengali.run_engine(load=False, save=True)
     LOGGER.info(f"Saving to s3 bucket")
-    trainer.save_to_s3(filename=model_name, key=model_name)
+
+
+if __name__ == "__main__":
+    runner()

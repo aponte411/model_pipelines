@@ -32,7 +32,7 @@ class BengaliEngine:
                           shuffle=True,
                           num_workers=4)
 
-    def run_engine(self) -> None:
+    def run_engine(self, load: bool, save: model) -> None:
         """Trains a ResNet34 model for the BengaliAI bengali grapheme competiton.
 
         Arguments:
@@ -59,5 +59,5 @@ class BengaliEngine:
                 LOGGER.info(f"Early stopping at epoch: {epoch}")
                 self.trainer.save_model_locally(key=model_path)
                 break
-
+        
         self.trainer.save_model_locally(key=model_path)
