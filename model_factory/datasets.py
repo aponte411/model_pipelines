@@ -20,22 +20,20 @@ LOGGER = utils.get_logger(__name__)
 
 class BengaliDataSetTrain:
     def __init__(self,
-                 train_path: str = "inputs/bengali_grapheme/train-folds.csv",
-                 target: List[str] = [
-                     "grapheme_root", "vowel_diacritic", "consonant_diacritic"
-                 ],
-                 folds: List[int] = [0, 1],
+                 train_path: str,
+                 pickle_path: str = None,
+                 folds: Any = [0],
                  image_height: int = None,
                  image_width: int = None,
                  mean: float = None,
                  std: float = None):
         self.train_path = train_path
-        self.target = target
         self.folds = folds
         self.image_height = image_height
         self.image_width = image_width
         self.mean = mean
         self.std = std
+        self.pickle_path = pickle_path
         self._create_attributes()
         self._create_augmentations()
 
@@ -80,9 +78,7 @@ class BengaliDataSetTrain:
 
     def __getitem__(self, item: int) -> Dict:
         def _prepare_image() -> Image:
-            image = joblib.load(
-                f"inputs/bengali_grapheme/pickled_images/{self.image_ids[item]}.p"
-            )
+            image = joblib.load(f"{self.pickle_path}/{self.image_ids[item]}.p")
             image = image.reshape(137, 236).astype(float)
             return Image.fromarray(image).convert("RGB")
 
