@@ -69,36 +69,32 @@ class BengaliEngine:
         """
         Trains a ResNet34 model for the BengaliAI bengali grapheme competiton.
         """
-        def _run_training_loop():
-            train = self._get_training_loader(folds=self.params["train_folds"])
-            val = self._get_training_loader(folds=self.params["val_folds"])
-            self.model_name = f"{self.trainer}_bengali"
-            self.model_state_path = f"{self.model_name}_fold{self.params['train_folds']}.pth"
-            self.model_path = f'trained_models/{self.model_name}.p'
-            best_score = -1
-            for epoch in range(self.params["epochs"]):
-                LOGGER.info(f'EPOCH: {epoch}')
-                train_loss, train_score = self.trainer.train(train)
-                val_loss, val_score = self.trainer.evaluate(val)
-                if val_score > best_score:
-                    best_score = val_score
-                    torch.save(self.trainer.model.state_dict(),
-                               model_state_path)
-                LOGGER.info(
-                    f'Train loss: {train_loss}, Train score: {train_score}')
-                LOGGER.info(
-                    f'Validation loss: {val_loss}, Validation score: {val_score}'
-                )
-                self.trainer.scheduler.step(val_loss)
-                self.trainer.early_stopping(val_score, self.trainer.model)
-                if self.trainer.early_stopping.early_stop:
-                    LOGGER.info(f"Early stopping at epoch: {epoch}")
-                    self.trainer.save_model_locally(key=model_path)
-                    self.trainer.save_to_s3(filename=model_path,
-                                            key=model_name)
-                    break
+        train = self._get_training_loader(folds=self.params["train_folds"])
+        val = self._get_training_loader(folds=self.params["val_folds"])
+        self.model_name = f"{self.trainer}_bengali"
+        self.model_state_path = f"{self.model_name}_fold{self.params['train_folds']}.pth"
+        self.model_path = f'trained_models/{self.model_name}.p'
+        best_score = -1
+        for epoch in range(self.params["epochs"]):
+            LOGGER.info(f'EPOCH: {epoch}')
+            train_loss, train_score = self.trainer.train(train)
+            val_loss, val_score = self.trainer.evaluate(val)
+            if val_score > best_score:
+                best_score = val_score
+                torch.save(self.trainer.model.state_dict(), model_state_path)
+            LOGGER.info(
+                f'Train loss: {train_loss}, Train score: {train_score}')
+            LOGGER.info(
+                f'Validation loss: {val_loss}, Validation score: {val_score}')
+            self.trainer.scheduler.step(val_loss)
+            self.trainer.early_stopping(val_score, self.trainer.model)
+            if self.trainer.early_stopping.early_stop:
+                LOGGER.info(f"Early stopping at epoch: {epoch}")
+                self.trainer.save_model_locally(key=model_path)
+                self.trainer.save_to_s3(filename=model_path, key=model_name)
+                break
 
-            self.trainer.save_model_locally(key=model_path)
+        self.trainer.save_model_locally(key=model_path)
 
     def run_inference_engine(self) -> pd.DataFrame:
         """Conducts inference using the test set.
