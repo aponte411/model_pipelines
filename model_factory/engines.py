@@ -59,4 +59,5 @@ class BengaliEngine:
                 LOGGER.info(f"Early stopping at epoch: {epoch}")
                 self.trainer.save_model_locally(key=model_path)
                 break
-            self.trainer.save_model_locally(key=model_path)
+
+        self.trainer.save_model_locally(key=model_path)
