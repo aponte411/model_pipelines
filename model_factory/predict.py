@@ -5,42 +5,42 @@ import click
 import numpy as np
 
 import datasets
+import engines
 import models
-import numerapi
-import numerox as nx
 import trainers
 import utils
 
 LOGGER = utils.get_logger(__name__)
 
 
-def train_and_predict_quora_model(load_model: bool, save_model: bool,
-                                  X_train: pd.DataFrame, X_val: pd.DataFrame,
-                                  y_train: pd.DataFrame,
-                                  y_val: pd.DataFrame) -> None:
-    trainer = trainers.QuoraTrainer()
-    saved_model_name = f'{trainer}_prediction_model.p'
-    if load_model:
-        trainer.load_from_s3(filename=saved_model_name, key=saved_model_name)
-        predictions = trainer.predict(X=X_val)
-        return predictions
-    else:
-        trainer.train_model(X=X_train, y=y_train, X_val=X_val, y_val=X_val)
-        if save_model:
-            trainer.save_model_locally(key=saved_model_name)
-            trainer.save_to_s3(filename=saved_model_name, key=saved_model_name)
-        predictions = trainer.predict_and_score(X_new=X_val, y_new=y_val)
-        return predictions
-
-
 @click.command()
 @click.option('-m', '--competition', type=str, default='quora')
 @click.option('-lm', '--load-model', type=bool, default=True)
 @click.option('-sm', '--save-model', type=bool, default=False)
-def main(model: str, load_model: bool, save_model: bool,
-         submit: bool) -> pd.DataFrame:
+def main(submit: bool) -> pd.DataFrame:
+
+    PARAMS = {
+        "train_path": "inputs/bengali_grapheme/train-folds.csv",
+        "test_path": "inputs/bengali_grapheme",
+        "image_height": 137,
+        "image_width": 236,
+        "batch_size": 64,
+        "test_batch_size": 64,
+        "mean": (0.485, 0.456, 0.406),
+        "std": (0.229, 0.239, 0.225),
+        "train_folds": [0],
+        "val_folds": [4],
+        "test_loops": 5
+    }
+
+    model = models.ResNet34(pretrained=False)
+    trainer = trainers.BengaliTrainer(model=model)
+    bengali = engines.BengaliEngine(name='bengali-engine',
+                                    trainer=trainer,
+                                    params=PARAMS)
+    submission = bengali.run_inference_engine()
+    LOGGER.info(submission.head())
     # WIP
-    pass
 
 
 if __name__ == "__main__":

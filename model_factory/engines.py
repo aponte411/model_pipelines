@@ -14,6 +14,11 @@ LOGGER = utils.get_logger(__name__)
 
 
 class BengaliEngine:
+    """
+    The BengaliEngine will combine trainers, datasets, and models
+    into a single object that contains functionality to train models
+    and conduct inference.
+    """
     def __init__(self, name: str, trainer: Trainer, params: Dict, **kwds):
         super().__init__(**kwds)
         self.name = name
@@ -21,6 +26,9 @@ class BengaliEngine:
         self.training_set = BengaliDataSetTrain
         self.test_set = BengaliDataSetTest
         self.params = params
+        self.model_name = None
+        self.model_state_path = None
+        self.model_path = None
 
     def _get_training_loader(self, folds: List[int]) -> DataLoader:
         self.dataset = self.training_set(
@@ -58,72 +66,79 @@ class BengaliEngine:
     def run_training_engine(self,
                             load: bool = False,
                             save: bool = True) -> None:
-        """Trains a ResNet34 model for the BengaliAI bengali grapheme competiton.
-
-        Arguments:
-            training_data {str} -- path to train-folds.csv file
-            epochs {int} -- number of epochs you want to train the classifier
-            params {Dict} -- parameter dictionary
         """
-        train = self._get_training_loader(folds=self.params["train_folds"])
-        val = self._get_training_loader(folds=self.params["val_folds"])
-        model_name = f"{self.trainer}_bengali.p"
-        model_path = f'trained_models/{model_name}'
-        for epoch in range(self.params["epochs"]):
-            LOGGER.info(f'EPOCH: {epoch}')
-            train_loss, train_score = self.trainer.train(train)
-            val_loss, val_score = self.trainer.evaluate(val)
-            LOGGER.info(
-                f'Train loss: {train_loss}, Train score: {train_score}')
-            LOGGER.info(
-                f'Validation loss: {val_loss}, Validation score: {val_score}')
-            self.trainer.scheduler.step(val_loss)
-            self.trainer.early_stopping(val_score, self.trainer.model)
-            if self.trainer.early_stopping.early_stop:
-                LOGGER.info(f"Early stopping at epoch: {epoch}")
-                self.trainer.save_model_locally(key=model_path)
-                self.trainer.save_to_s3(filename=model_path, key=model_name)
-                break
+        Trains a ResNet34 model for the BengaliAI bengali grapheme competiton.
+        """
+        def _run_training_loop():
+            train = self._get_training_loader(folds=self.params["train_folds"])
+            val = self._get_training_loader(folds=self.params["val_folds"])
+            self.model_name = f"{self.trainer}_bengali"
+            self.model_state_path = f"{self.model_name}_fold{self.params['train_folds']}.pth"
+            self.model_path = f'trained_models/{self.model_name}.p'
+            best_score = -1
+            for epoch in range(self.params["epochs"]):
+                LOGGER.info(f'EPOCH: {epoch}')
+                train_loss, train_score = self.trainer.train(train)
+                val_loss, val_score = self.trainer.evaluate(val)
+                if val_score > best_score:
+                    best_score = val_score
+                    torch.save(self.trainer.model.state_dict(),
+                               model_state_path)
+                LOGGER.info(
+                    f'Train loss: {train_loss}, Train score: {train_score}')
+                LOGGER.info(
+                    f'Validation loss: {val_loss}, Validation score: {val_score}'
+                )
+                self.trainer.scheduler.step(val_loss)
+                self.trainer.early_stopping(val_score, self.trainer.model)
+                if self.trainer.early_stopping.early_stop:
+                    LOGGER.info(f"Early stopping at epoch: {epoch}")
+                    self.trainer.save_model_locally(key=model_path)
+                    self.trainer.save_to_s3(filename=model_path,
+                                            key=model_name)
+                    break
 
-        self.trainer.save_model_locally(key=model_path)
+            self.trainer.save_model_locally(key=model_path)
 
-    def _inference(self) -> Dict:
-        predictions = {}
-        testing_loaders = self._get_all_testing_loaders()
-        for loader in testing_loaders:
-            for batch, data in enumerate(loader):
-                image = data["image"]
-                img_id = data["image_id"]
-                image = image.to(self.trainer.device, dtype=torch.float)
-                grapheme, vowel, consonant = self.trainer.model(image)
-                for idx, image_id in enumerate(img_id):
-                    predictions["grapheme"] = grapheme[idx].cpu().detach(
-                    ).numpy()
-                    predictions["vowel"] = vowel[idx].cpu().detach().numpy()
-                    predictions["consonant"] = consonant[idx].cpu().detach(
-                    ).numpy()
-                    predictions["image_id"] = image_id
+    def run_inference_engine(self) -> pd.DataFrame:
+        """Conducts inference using the test set.
 
-        return predictions
+        Returns:
+            pd.DataFrame -- Predictions ready for submission to the leaderboard
+        """
+        def _inference() -> Dict:
+            predictions = {}
+            testing_loaders = self._get_all_testing_loaders()
+            for loader in testing_loaders:
+                for batch, data in enumerate(loader):
+                    image = data["image"]
+                    img_id = data["image_id"]
+                    image = image.to(self.trainer.device, dtype=torch.float)
+                    grapheme, vowel, consonant = self.trainer.model(image)
+                    for idx, image_id in enumerate(img_id):
+                        predictions["grapheme"] = grapheme[idx].cpu().detach(
+                        ).numpy()
+                        predictions["vowel"] = vowel[idx].cpu().detach().numpy(
+                        )
+                        predictions["consonant"] = consonant[idx].cpu().detach(
+                        ).numpy()
+                        predictions["image_id"] = image_id
 
-    def run_inference_engine(self) -> Dict:
-        def _get_final_preds(preds: Dict):
+            return predictions
+
+        def _get_final_preds(preds: Dict) -> Dict:
             return {
                 "final_grapheme":
-                np.argmax(np.mean(np.array(final_predictions["grapheme"]),
-                                  axis=0),
+                np.argmax(np.mean(final_predictions["grapheme"], axis=0),
                           axis=1),
                 "final_vowel":
-                np.argmax(np.mean(np.array(final_predictions["vowel"]),
-                                  axis=0),
-                          axis=1),
+                np.argmax(np.mean(final_predictions["vowel"], axis=0), axis=1),
                 "final_consonant":
-                np.argmax(np.mean(np.array(final_predictions["consonant"]),
-                                  axis=0),
+                np.argmax(np.mean(final_predictions["consonant"], axis=0),
                           axis=1)
             }
 
-        def _create_submission_df(pred_dict: Dict):
+        def _create_submission_df(pred_dict: Dict) -> pd.DataFrame:
             predictions = []
             for idx, image_id in enumerate(pred_dict["image_id"]):
                 predictions.append((f"{image_id}_grapheme_root",
@@ -136,12 +151,12 @@ class BengaliEngine:
             return pd.DataFrame(predictions, columns=["row_id", "target"])
 
         final_predictions = {}
-        for idx in range(5):
+        for idx in range(self.params["test_loops"]):
             self.trainer.model.load_state_dict(
-                torch.load(f"../input/resnet34weights/resnet34_fold{idx}.pth"))
+                torch.load(self.model_state_path))
             self.trainer.model.to(self.trainer.device)
             self.trainer.model.eval()
-            predictions = self._inference()
+            predictions = _inference()
             final_predictions["grapheme"] = predictions["grapheme"]
             final_predictions["vowel"] = predictions["vowel"]
             final_predictions["consonant"] = predictions["consonant"]

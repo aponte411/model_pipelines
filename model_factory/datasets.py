@@ -157,6 +157,6 @@ class BengaliDataSetTest:
             }
 
         image = _prepare_image()
-        image = _augment_image(image=image)
+        augmented_image = _augment_image(image=image)
         image_id = _get_image_id()
-        return _return_image_dict(image=image, image_id=image_id)
+        return _return_image_dict(image=augmented_image, image_id=image_id)
