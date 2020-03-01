@@ -14,7 +14,7 @@ LOGGER = utils.get_logger(__name__)
               type=str,
               default="inputs/bengali_grapheme/train_*.parquet")
 def main(input: str, output: str):
-    utils.pickle_images(train_path=input, parquet_path=output)
+    utils.pickle_images(input=input, output_dir=output)
 
 
 if __name__ == "__main__":
