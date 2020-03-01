@@ -20,8 +20,8 @@ class BengaliEngine:
         self.dataset = BengaliDataSetTrain
         self.params = params
 
-    def _get_loader(self, train_path: str, folds: List[int]) -> DataLoader:
-        self.dataset = self.dataset(train_path=train_path,
+    def _get_loader(self, folds: List[int]) -> DataLoader:
+        self.dataset = self.dataset(train_path=self.params["train_path"],
                                     folds=folds,
                                     image_height=self.params["image_height"],
                                     image_width=self.params["image_width"],
@@ -32,7 +32,7 @@ class BengaliEngine:
                           shuffle=True,
                           num_workers=4)
 
-    def run_engine(self, load: bool, save: model) -> None:
+    def run_engine(self, load: bool = False, save: bool = True) -> None:
         """Trains a ResNet34 model for the BengaliAI bengali grapheme competiton.
 
         Arguments:
@@ -40,11 +40,10 @@ class BengaliEngine:
             epochs {int} -- number of epochs you want to train the classifier
             params {Dict} -- parameter dictionary
         """
-        train = self._get_loader(train_path=self.dataset.train_path,
-                                 folds=self.params["train_folds"])
-        val = self._get_loader(train_path=self.dataset.train_path,
-                               folds=self.params["val_folds"])
-        model_path = f'trained_models/{self.trainer}_bengali.p'
+        train = self._get_loader(folds=self.params["train_folds"])
+        val = self._get_loader(folds=self.params["val_folds"])
+        model_name = f"{self.trainer}_bengali.p"
+        model_path = f'trained_models/{model_name}'
         for epoch in range(self.params["epochs"]):
             LOGGER.info(f'EPOCH: {epoch}')
             train_loss, train_score = self.trainer.train(train)
@@ -58,6 +57,7 @@ class BengaliEngine:
             if self.trainer.early_stopping.early_stop:
                 LOGGER.info(f"Early stopping at epoch: {epoch}")
                 self.trainer.save_model_locally(key=model_path)
+                self.trainer.save_to_s3(filename=model_path, key=model_name)
                 break
-        
+
         self.trainer.save_model_locally(key=model_path)

@@ -10,6 +10,7 @@ from models import ResNet34
 def runner(data: str) -> Optional:
     if data == 'bengali':
         PARAMS = {
+            "train_path": "inputs/bengali_grapheme/train-folds.csv",
             "image_height": 137,
             "image_width": 236,
             "mean": (0.485, 0.456, 0.406),

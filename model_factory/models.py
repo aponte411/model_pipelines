@@ -33,7 +33,31 @@ from metrics import macro_recall
 LOGGER = utils.get_logger(__name__)
 
 
-class ResNet34(nn.Module):
+class BaseModel:
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+
+    def save_to_s3(self, filename: str, key: str) -> None:
+        """Save model to s3 bucket"""
+        s3 = utils.S3Client()
+        s3.upload_file(filename=filename, key=key)
+
+    def load_from_s3(self, filename: str, key: str) -> None:
+        """Download model from s3 bucket"""
+        s3 = utils.S3Client()
+        s3.download_file(filename=filename, key=key)
+
+    def save(self, filename):
+        """Serialize model"""
+        joblib.dump(self, filename)
+
+    @classmethod
+    def load(cls, filename):
+        """Load trained model"""
+        return joblib.load(filename)
+
+
+class ResNet34(nn.Module, BaseModel):
     def __init__(self, pretrained: bool, **kwds):
         super().__init__(**kwds)
         if pretrained:

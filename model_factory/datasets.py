@@ -20,7 +20,7 @@ LOGGER = utils.get_logger(__name__)
 
 class BengaliDataSetTrain:
     def __init__(self,
-                 train_path: str,
+                 train_path: str = "inputs/bengali_grapheme/train-folds.csv",
                  target: List[str] = [
                      "grapheme_root", "vowel_diacritic", "consonant_diacritic"
                  ],
