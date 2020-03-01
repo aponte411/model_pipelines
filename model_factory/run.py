@@ -11,8 +11,7 @@ LOGGER = utils.get_logger(__name__)
 
 @click.command()
 @click.option('-d', '--data', type=str, default='bengali')
-@click.option('-i', '--inference', type=bool, default=False)
-def runner(data: str, inference: bool) -> Optional:
+def runner(data: str) -> Optional:
     if data == 'bengali':
         for train_fold in range(4):
             PARAMS = {
