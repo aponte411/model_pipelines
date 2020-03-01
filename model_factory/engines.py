@@ -44,7 +44,7 @@ class BengaliEngine:
             image_width=self.params["image_width"],
             mean=self.params["mean"],
             std=self.params["std"])
-        return DataLoader(dataset=self.training_dataset,
+        return DataLoader(dataset=self.training_set,
                           batch_size=self.params["batch_size"],
                           shuffle=True,
                           num_workers=4)
