@@ -110,8 +110,7 @@ class EarlyStopping:
         self.val_loss_min = val_loss
 
 
-def pickle_images(input: str = "inputs/bengali_grapheme/train_*.parquet",
-                  output_dir: str = "inputs/bengali_grapheme/pickled_images"):
+def pickle_images(input: str, output_dir: str):
     for file_name in glob.glob(input):
         df = pd.read_parquet(file_name)
         image_ids = df.image_id.values

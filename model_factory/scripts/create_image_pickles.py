@@ -8,7 +8,7 @@ LOGGER = utils.get_logger(__name__)
 @click.option('-in',
               '--input',
               type=str,
-              default="inputs/bengali_grapheme/train-folds.csv")
+              default="inputs/bengali_grapheme/train_*.parquet")
 @click.option('-ou',
               '--output',
               type=str,
