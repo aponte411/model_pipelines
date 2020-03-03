@@ -26,7 +26,7 @@ LOGGER = utils.get_logger(__name__)
 class Trainer:
     """Base class for training/inference
 
-    Arguments:
+    Arguements:
         model {Any} -- object from models module.
     """
     def __init__(self, model: Any, **kwds):
@@ -110,6 +110,7 @@ class BengaliTrainer(Trainer):
     def __init__(self, model: Any, **kwds):
         super().__init__(model, **kwds)
         self.model = model
+        self.model.cuda()
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)

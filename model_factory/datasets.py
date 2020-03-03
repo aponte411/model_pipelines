@@ -18,7 +18,7 @@ import utils
 LOGGER = utils.get_logger(__name__)
 
 
-class BengaliDataSetTrain:
+class BengaliDataSetTrain(Dataset):
     """
     Dataset for training/validation.
 
@@ -116,7 +116,7 @@ class BengaliDataSetTrain:
         return _return_image_dict(image=image)
 
 
-class BengaliDataSetTest:
+class BengaliDataSetTest(Dataset):
     """
     Dataset for inference.
 

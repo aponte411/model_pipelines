@@ -27,3 +27,4 @@ opencv-python==4.2.0.32
 iterative-stratification==0.1.6
 apache-airflow[celery,kubernetes]
 pytorch-lightning==0.6.0
+tensorflow

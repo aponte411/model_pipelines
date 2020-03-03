@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional, Tuple
-
+import IPython
 import click
 import numpy as np
 import pandas as pd
@@ -28,15 +28,17 @@ class BengaliEngine:
         super().__init__(**kwds)
         self.name = name
         self.trainer = trainer
-        self.training_set = BengaliDataSetTrain
-        self.test_set = BengaliDataSetTest
+        self.training_constructor = BengaliDataSetTrain
+        self.val_constructor = BengaliDataSetTrain
+        self.test_constructor = BengaliDataSetTest
         self.params = params
         self.model_name = None
         self.model_state_path = None
         self.model_path = None
 
-    def _get_training_loader(self, folds: List[int]) -> DataLoader:
-        self.dataset = self.training_set(
+    def _get_training_loader(self, folds: List[int], name: str) -> DataLoader:
+        constructor = getattr(self, f'{name}_constructor')
+        setattr(self, f'{name}_set', constructor(
             train_path=self.params["train_path"],
             pickle_path=self.params["pickle_path"],
             folds=folds,
@@ -44,6 +46,7 @@ class BengaliEngine:
             image_width=self.params["image_width"],
             mean=self.params["mean"],
             std=self.params["std"])
+               )
         return DataLoader(dataset=self.training_set,
                           batch_size=self.params["batch_size"],
                           shuffle=True,
@@ -51,13 +54,13 @@ class BengaliEngine:
 
     def _get_all_testing_loaders(self):
         def _get_loader(df: pd.DataFrame) -> DataLoader:
-            self.test_set = self.test_set(
+            test_set = self.test_constructor(
                 df=df,
                 image_height=self.params["image_height"],
                 image_width=self.params["image_width"],
                 mean=self.params["mean"],
                 std=self.params["std"])
-            return DataLoader(dataset=self.test_set,
+            return DataLoader(dataset=test_set,
                               batch_size=self.params["test_batch_size"],
                               shuffle=False,
                               num_workers=4)
@@ -75,8 +78,9 @@ class BengaliEngine:
         """
         Trains a ResNet34 model for the BengaliAI bengali grapheme competition.
         """
-        train = self._get_training_loader(folds=self.params["train_folds"])
-        val = self._get_training_loader(folds=self.params["val_folds"])
+  
+        train = self._get_training_loader(folds=self.params["train_folds"], name='training')
+        val = self._get_training_loader(folds=self.params["val_folds"], name='val')
         self.model_name = f"{self.trainer}_bengali"
         self.model_state_path = f"{self.model_name}_fold{self.params['train_folds']}.pth"
         self.model_path = f'trained_models/{self.model_name}.p'
@@ -101,6 +105,7 @@ class BengaliEngine:
                 break
 
         self.trainer.save_model_locally(key=model_path)
+        self.trainer.save_to_s3(filename=model_path, key=model_name)
 
     def run_inference_engine(self) -> pd.DataFrame:
         """Conducts inference using the test set.
