@@ -36,7 +36,7 @@ class BengaliEngine:
         self.model_path = None
 
     def _get_training_loader(self, folds: List[int]) -> DataLoader:
-        self.dataset = self.training_set(
+        self.training_set = self.training_set(
             train_path=self.params["train_path"],
             pickle_path=self.params["pickle_path"],
             folds=folds,
