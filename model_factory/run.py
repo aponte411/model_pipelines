@@ -1,3 +1,5 @@
+from typing import Optional
+
 import click
 
 from engines import BengaliEngine
@@ -17,6 +19,8 @@ def runner(data: str) -> Optional:
             PARAMS = {
                 "train_path": "inputs/bengali_grapheme/train-folds.csv",
                 "test_path": "inputs/bengali_grapheme",
+                "pickle_path": "inputs/bengali_grapheme/pickled_images",
+                "epochs": 5,
                 "image_height": 137,
                 "image_width": 236,
                 "batch_size": 64,
