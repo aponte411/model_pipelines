@@ -22,12 +22,14 @@ def main(submit: bool) -> pd.DataFrame:
     PARAMS = {
         "train_path": "inputs/bengali_grapheme/train-folds.csv",
         "test_path": "inputs/bengali_grapheme",
+        "pickle_path": "inputs/bengali_grapheme/pickled_images",
         "image_height": 137,
         "image_width": 236,
         "batch_size": 64,
         "test_batch_size": 64,
         "mean": (0.485, 0.456, 0.406),
         "std": (0.229, 0.239, 0.225),
+        "epochs": 5,
         "train_folds": [0],
         "val_folds": [4],
         "test_loops": 5
