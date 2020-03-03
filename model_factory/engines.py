@@ -73,7 +73,7 @@ class BengaliEngine:
                             load: bool = False,
                             save: bool = True) -> None:
         """
-        Trains a ResNet34 model for the BengaliAI bengali grapheme competiton.
+        Trains a ResNet34 model for the BengaliAI bengali grapheme competition.
         """
         train = self._get_training_loader(folds=self.params["train_folds"])
         val = self._get_training_loader(folds=self.params["val_folds"])

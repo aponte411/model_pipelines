@@ -159,7 +159,8 @@ class BengaliDataSetTest:
     def __getitem__(self, item: int) -> Dict:
         def _prepare_image() -> Image:
             image = self.image_arr[item, :]
-            image = image.reshape(137, 236).astype(float)
+            image = image.reshape(self.image_height,
+                                  self.image_width).astype(float)
             return Image.fromarray(image).convert("RGB")
 
         def _augment_image(image) -> np.array:
