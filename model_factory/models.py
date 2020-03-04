@@ -99,18 +99,19 @@ class ResNet34Lightning(pl.LightningModule):
         return linear1, linear2, linear3
 
     def training_step(self, batch, batch_idx):
-        # REQUIRED
-        x, y = batch
-        y_hat = self.forward(x)
-        loss = F.cross_entropy(y_hat, y)
+        image = self._get_image(data=batch)
+        targets = self._get_targets(data=batch)
+        predictions = self.forward(image)
+        loss = self._loss_fn(preds=predictions, targets=targets)
         tensorboard_logs = {'train_loss': loss}
         return {'loss': loss, 'log': tensorboard_logs}
 
     def validation_step(self, batch, batch_idx):
-        # OPTIONAL
-        x, y = batch
-        y_hat = self.forward(x)
-        return {'val_loss': F.cross_entropy(y_hat, y)}
+        image = self._get_image(data=batch)
+        targets = self._get_targets(data=batch)
+        predictions = self.forward(image)
+        loss = self._loss_fn(preds=predictions, targets=targets)
+        return {'val_loss': loss}
 
     def validation_end(self, outputs):
         # OPTIONAL
