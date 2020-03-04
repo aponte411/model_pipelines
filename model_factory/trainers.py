@@ -107,9 +107,10 @@ class QuoraTrainer(Trainer):
 
 
 class BengaliTrainer(Trainer):
-    def __init__(self, model: Any, **kwds):
+    def __init__(self, model: Any, model_name: str = None, **kwds):
         super().__init__(model, **kwds)
         self.model = model
+        self.model_name = model_name
         self.model.cuda()
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -118,6 +119,9 @@ class BengaliTrainer(Trainer):
         self.early_stopping = EarlyStopping(patience=5, verbose=True)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer, mode="min", patience=5, factor=0.3, verbose=True)
+
+    def get_model_name(self):
+        return self.model_name
 
     def _loss_fn(self, preds, targets):
         pred1, pred2, pred3 = preds

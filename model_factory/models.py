@@ -28,6 +28,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 import utils
+from datasets import BengaliDataSetTrain, BengaliDataSetTest
 from metrics import macro_recall
 
 LOGGER = utils.get_logger(__name__)
@@ -51,8 +52,7 @@ class BaseModel:
         """Serialize model"""
         joblib.dump(self, filename)
 
-    @classmethod
-    def load(cls, filename):
+    def load(self, filename):
         """Load trained model"""
         return joblib.load(filename)
 
@@ -81,13 +81,16 @@ class ResNet34(nn.Module, BaseModel):
 
 # WIP
 class ResNet34Lightning(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, params: Dict):
         super().__init__()
         self.model = pretrainedmodels.__dict__["resnet34"](
             pretrained="imagenet")
         self.linear1 = nn.Linear(512, 168)
         self.linear2 = nn.Linear(512, 11)
         self.linear3 = nn.Linear(512, 7)
+        self.train_constructor = BengaliDataSetTrain
+        self.val_constructor = BengaliDataSetTrain
+        self.test_constructor = BengaliDataSetTest
 
     def forward(self, x: torch.tensor) -> Tuple:
         batch_size, _, _, _ = x.shape
@@ -102,7 +105,7 @@ class ResNet34Lightning(pl.LightningModule):
         image = self._get_image(data=batch)
         targets = self._get_targets(data=batch)
         predictions = self.forward(image)
-        loss = self._loss_fn(preds=predictions, targets=targets)
+        loss = self.cross_entropy_loss(preds=predictions, targets=targets)
         tensorboard_logs = {'train_loss': loss}
         return {'loss': loss, 'log': tensorboard_logs}
 
@@ -114,50 +117,68 @@ class ResNet34Lightning(pl.LightningModule):
         return {'val_loss': loss}
 
     def validation_end(self, outputs):
-        # OPTIONAL
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         tensorboard_logs = {'val_loss': avg_loss}
         return {'avg_val_loss': avg_loss, 'log': tensorboard_logs}
 
     def test_step(self, batch, batch_idx):
-        # OPTIONAL
-        x, y = batch
-        y_hat = self.forward(x)
-        return {'test_loss': F.cross_entropy(y_hat, y)}
+        image = self._get_image(data=batch)
+        targets = self._get_targets(data=batch)
+        predictions = self.forward(image)
+        return {'test_loss': F.cross_entropy(predictions, targets)}
 
     def test_end(self, outputs):
-        # OPTIONAL
         avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
         tensorboard_logs = {'test_loss': avg_loss}
         return {'avg_test_loss': avg_loss, 'log': tensorboard_logs}
 
     def configure_optimizers(self):
-        # REQUIRED
-        # can return multiple optimizers and learning_rate schedulers
-        # (LBFGS it is automatically supported, no need for closure function)
         return torch.optim.Adam(self.parameters(), lr=0.02)
 
     @pl.data_loader
     def train_dataloader(self):
-        # REQUIRED
-        return DataLoader(self.train_path, batch_size=32)
+        setattr(
+            self, 'training_set',
+            self.train_constructor(train_path=self.params["train_path"],
+                                   pickle_path=self.params["pickle_path"],
+                                   folds=self.params["train_folds"],
+                                   image_height=self.params["image_height"],
+                                   image_width=self.params["image_width"],
+                                   mean=self.params["mean"],
+                                   std=self.params["std"]))
+        return DataLoader(self.training_set,
+                          batch_size=self.params["train_batch_size"],
+                          shuffle=True,
+                          num_workers=4)
 
     @pl.data_loader
     def val_dataloader(self):
-        # OPTIONAL
-        return DataLoader(self.val_path, batch_size=32)
+        setattr(
+            self, 'val_set',
+            self.train_constructor(train_path=self.params["train_path"],
+                                   pickle_path=self.params["pickle_path"],
+                                   folds=self.params["val_folds"],
+                                   image_height=self.params["image_height"],
+                                   image_width=self.params["image_width"],
+                                   mean=self.params["mean"],
+                                   std=self.params["std"]))
+        return DataLoader(self.val_set,
+                          batch_size=self.params["train_batch_size"],
+                          shuffle=True,
+                          num_workers=4)
 
     @pl.data_loader
     def test_dataloader(self):
         # OPTIONAL
         return DataLoader(self.test_path, batch_size=32)
 
-    def _loss_fn(self, outputs, targets):
+    def cross_entropy_loss(self, outputs, targets):
+        criterion = nn.CrossEntropyLoss()
         output1, output2, output3 = outputs
         target1, target2, target3 = targets
-        loss1 = self.criterion(output1, target1)
-        loss2 = self.criterion(output2, target2)
-        loss3 = self.criterion(output3, target3)
+        loss1 = criterion(output1, target1)
+        loss2 = criterion(output2, target2)
+        loss3 = criterion(output3, target3)
         return (loss1 + loss2 + loss3) / 3
 
     def _load_to_gpu_float(self, data):
@@ -165,70 +186,3 @@ class ResNet34Lightning(pl.LightningModule):
 
     def _load_to_gpu_long(self, data):
         return data.to(self.device, dtype=torch.long)
-
-    def train(self, data_loader: DataLoader) -> Tuple[float, float]:
-        self.model.train()
-        final_loss = 0
-        counter = 0
-        final_outputs, final_targets = [], []
-        for batch, data in tqdm(enumerate(data_loader)):
-            counter += 1
-            image = self._load_to_gpu_float(data["image"])
-            grapheme_root = self._load_to_gpu_long(data["grapheme_root"])
-            vowel_diacritic = self._load_to_gpu_long(data["vowel_diacritic"])
-            consonant_diacritic = self._load_to_gpu_long(
-                data["consonant_diacritic"])
-            self.optimizer.zero_grad()
-            outputs = self.model(image)
-            targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
-            loss = self._loss_fn(outputs=outputs, targets=targets)
-            loss.backward()
-            self.optimizer.step()
-            final_loss += loss
-
-            output1, output2, output3 = outputs
-            target1, target2, target3 = targets
-            final_outputs.append(torch.cat((output1, output2, output3), dim=1))
-            final_targets.append(
-                torch.stack((target1, target2, target3), dim=1))
-
-        final_outputs = torch.cat(final_outputs)
-        final_targets = torch.cat(final_targets)
-        macro_recall = macro_recall(final_outputs, final_targets)
-
-        LOGGER.info(f'loss: {final_loss/counter}')
-        LOGGER.info(f'macro-recall: {macro_recall}')
-
-        return final_loss / counter, macro_recall
-
-    def evaluate(self, data_loader: DataLoader) -> Tuple[float, float]:
-        with torch.no_grad():
-            self.model.eval()
-            final_loss = 0
-            counter = 0
-            final_outputs, final_targets = [], []
-            for batch, data in tqdm(enumerate(data_loader)):
-                counter += 1
-                image = self._load_to_gpu_float(data["image"])
-                grapheme_root = self._load_to_gpu_long(data["grapheme_root"])
-                vowel_diacritic = self._load_to_gpu_long(
-                    data["vowel_diacritic"])
-                consonant_diacritic = self._load_to_gpu_long(
-                    data["consonant_diacritic"])
-
-                outputs = self.model(image)
-                targets = [grapheme_root, vowel_diacritic, consonant_diacritic]
-                final_loss += self._loss_fn(outputs=outputs, targets=targets)
-
-                output1, output2, output3 = outputs
-                target1, target2, target3 = targets
-                final_outputs.append(
-                    torch.cat((output1, output2, output3), dim=1))
-                final_targets.append(
-                    torch.stack((target1, target2, target3), dim=1))
-
-            final_outputs = torch.cat(final_outputs)
-            final_targets = torch.cat(final_targets)
-            macro_recall_score = macro_recall(final_, final_targets)
-
-        return final_loss / counter, macro_recall_score

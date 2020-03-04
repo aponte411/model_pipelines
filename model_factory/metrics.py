@@ -25,7 +25,7 @@ def hierarchical_macro_averaged_recall(df: pd.DataFrame) -> float:
 
 def macro_recall(y_true: torch.tensor,
                  preds: torch.tensor,
-                 n_grapheme: int = 16,
+                 n_grapheme: int = 168,
                  n_vowel: int = 11,
                  n_consonant: int = 7) -> float:
     def _split_preds(

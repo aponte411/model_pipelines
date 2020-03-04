@@ -38,17 +38,17 @@ class BengaliEngine:
 
     def _get_training_loader(self, folds: List[int], name: str) -> DataLoader:
         constructor = getattr(self, f'{name}_constructor')
-        setattr(self, f'{name}_set', constructor(
-            train_path=self.params["train_path"],
-            pickle_path=self.params["pickle_path"],
-            folds=folds,
-            image_height=self.params["image_height"],
-            image_width=self.params["image_width"],
-            mean=self.params["mean"],
-            std=self.params["std"])
-               )
-        return DataLoader(dataset=self.training_set,
-                          batch_size=self.params["batch_size"],
+        setattr(
+            self, f'{name}_set',
+            constructor(train_path=self.params["train_path"],
+                        pickle_path=self.params["pickle_path"],
+                        folds=folds,
+                        image_height=self.params["image_height"],
+                        image_width=self.params["image_width"],
+                        mean=self.params["mean"],
+                        std=self.params["std"]))
+        return DataLoader(dataset=getattr(self, f'{name}_set'),
+                          batch_size=self.params["train_batch_size"],
                           shuffle=True,
                           num_workers=4)
 
@@ -74,16 +74,18 @@ class BengaliEngine:
 
     def run_training_engine(self,
                             load: bool = False,
-                            save: bool = True) -> None:
+                            save: bool = True,
+                            model_dir: str = "trained_models") -> None:
         """
         Trains a ResNet34 model for the BengaliAI bengali grapheme competition.
         """
-  
-        train = self._get_training_loader(folds=self.params["train_folds"], name='training')
-        val = self._get_training_loader(folds=self.params["val_folds"], name='val')
-        self.model_name = f"{self.trainer}_bengali"
-        self.model_state_path = f"{self.model_name}_fold{self.params['train_folds']}.pth"
-        self.model_path = f'trained_models/{self.model_name}.p'
+        train = self._get_training_loader(folds=self.params["train_folds"],
+                                          name='training')
+        val = self._get_training_loader(folds=self.params["val_folds"],
+                                        name='val')
+        self.model_name = f"{self.trainer.get_model_name()}_bengali"
+        self.model_state_path = f"{model_dir}/{self.model_name}_fold{self.params['train_folds']}.pth"
+        self.model_path = f'{model_dir}/{self.model_name}.p'
         best_score = -1
         for epoch in range(self.params["epochs"]):
             LOGGER.info(f'EPOCH: {epoch}')
@@ -101,7 +103,8 @@ class BengaliEngine:
             if self.trainer.early_stopping.early_stop:
                 LOGGER.info(f"Early stopping at epoch: {epoch}")
                 self.trainer.save_model_locally(key=model_path)
-                self.trainer.save_to_s3(filename=model_path, key=model_name)
+                self.trainer.save_to_s3(filename=model_path,
+                                        key=self.model_name)
                 break
 
         self.trainer.save_model_locally(key=model_path)
