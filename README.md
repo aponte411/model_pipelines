@@ -8,10 +8,14 @@ Using inspiration from https://github.com/bgweber and https://github.com/abhishe
 
 # Setup
 
-1. Create a virtual environment using conda, virtualenv, virtualenvwrapper, etc. then pip install the requirements. I recommend using virtualenvwrapper as it makes it super easy to switch between virtual environments https://virtualenvwrapper.readthedocs.io/en/latest/:
-
-    - `mkvirtualenv new-project`
-    - `pip install -r requirements.txt`
+1. Create a virtual environment using conda, virtualenv, virtualenvwrapper, etc. then pip install the requirements. For example:
+```
+cd model_factory
+conda create -n model_pipelines python=3.6
+conda activate model_pipelines
+conda install pytorch torchvision -c pytorch -y
+pip install -r requirements.txt
+```
 
 2. Download a dataset and store it in `inputs` for example:`
     - `mkdir inputs` && `cd inputs`
