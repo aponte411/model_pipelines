@@ -26,4 +26,5 @@ def test_attributes(params):
                                     params=params)
     assert isinstance(bengali.trainer, trainers.Trainer)
     assert issubclass(bengali.training_set, datasets.BengaliDataSetTrain)
+    assert issubclass(bengali.val_set, datasets.BengaliDataSetTrain)
     assert issubclass(bengali.test_set, datasets.BengaliDataSetTest)

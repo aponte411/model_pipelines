@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from pytorch_lightning import Trainer
 from sklearn import metrics, preprocessing
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
@@ -23,7 +24,7 @@ from utils import EarlyStopping
 LOGGER = utils.get_logger(__name__)
 
 
-class Trainer:
+class BaseTrainer:
     """Base class for training/inference
 
     Arguements:
@@ -64,7 +65,7 @@ class Trainer:
         pass
 
 
-class QuoraTrainer(Trainer):
+class QuoraTrainer(BaseTrainer):
     def __init__(self, model: Any, **kwds):
         super().__init__(model, **kwds)
         self.model = model
@@ -106,7 +107,7 @@ class QuoraTrainer(Trainer):
         self.model.save_to_s3(filename=filename, key=key)
 
 
-class BengaliTrainer(Trainer):
+class BengaliTrainer(BaseTrainer):
     def __init__(self, model: Any, model_name: str = None, **kwds):
         super().__init__(model, **kwds)
         self.model = model
@@ -212,3 +213,11 @@ class BengaliTrainer(Trainer):
 
     def inference(self, data_loader):
         pass
+
+
+class BengaliLightningTrainer(Trainer):
+    def __init__(self):
+        super().__init__()
+
+    def train_model(self, model: Any):
+        self.fit(model)

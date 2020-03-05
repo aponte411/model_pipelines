@@ -1,7 +1,7 @@
 import trainers
 import utils
 from models import ResNet34
-from trainers import Trainer
+from trainers import BaseTrainer
 
 
 def test_attributes():
@@ -18,4 +18,4 @@ def test_attributes():
     assert hasattr(test_trainer, "load_model_from_s3")
     assert hasattr(test_trainer, "save_model_locally")
     assert hasattr(test_trainer, "save_model_to_s3")
-    assert isinstance(test_trainer, Trainer)
+    assert isinstance(test_trainer, BaseTrainer)

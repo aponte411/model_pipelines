@@ -1,5 +1,4 @@
 from typing import Dict, List, Optional, Tuple
-import IPython
 import click
 import numpy as np
 import pandas as pd
@@ -12,7 +11,7 @@ from trainers import BengaliTrainer, Trainer
 
 LOGGER = utils.get_logger(__name__)
 
-
+# requires CUDA to be enabled for OSX
 class BengaliEngine:
     """
     The BengaliEngine will combine trainers, datasets, and models
