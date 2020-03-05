@@ -24,7 +24,7 @@ def test_attributes(params):
     bengali = engines.BengaliEngine(name='bengali-engine',
                                     trainer=trainer,
                                     params=params)
-    assert isinstance(bengali.trainer, trainers.Trainer)
-    assert issubclass(bengali.training_set, datasets.BengaliDataSetTrain)
-    assert issubclass(bengali.val_set, datasets.BengaliDataSetTrain)
-    assert issubclass(bengali.test_set, datasets.BengaliDataSetTest)
+    assert isinstance(bengali.trainer, trainers.BaseTrainer)
+    assert issubclass(bengali.training_constructor, datasets.BengaliDataSetTrain)
+    assert issubclass(bengali.val_constructor, datasets.BengaliDataSetTrain)
+    assert issubclass(bengali.test_constructor, datasets.BengaliDataSetTest)
