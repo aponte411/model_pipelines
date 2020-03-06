@@ -23,8 +23,25 @@ class BengaliEngine:
     and conduct inference.
 
     Args:
-        trainer {Trainer} - Trainer object that handles training
-        params {Dict} - parameter dictionary
+        trainer {Trainer} - Trainer object that handles training and
+        serialization.
+        params {Dict} - Parameter dictionary containing engine arguments
+        such as the number of epochs, paths to data, and preprocessing
+        parameters, e.g.
+            - train_path {str}: "inputs/train-folds.csv",
+            - test_path {str}: "inputs",
+            - pickle_path {str}: "inputs/pickled_images",
+            - model_dir {str}: "trained_models",
+            - train_folds {List[int]}: [0],
+            - val_folds {List[int]}: [4],
+            - train_batch_size {int}: 64,
+            - test_batch_size {int}: 32,
+            - epochs {int}: 3,
+            - test_loops {int}: 5,
+            - image_height {int}: 137,
+            - image_width {int}: 236,
+            - mean {Tuple[float]}: (0.485, 0.456, 0.406),
+            - std {Tuple[float]}: (0.229, 0.239, 0.225)
     """
     def __init__(self, trainer: BaseTrainer, params: Dict, **kwds):
         super().__init__(**kwds)
@@ -76,9 +93,7 @@ class BengaliEngine:
             loaders.append(_get_loader(df=df))
         return loaders
 
-    def run_training_engine(self,
-                            load: bool = False,
-                            save: bool = True) -> None:
+    def run_training_engine(self) -> None:
         """
         Trains a ResNet34 model for the BengaliAI bengali grapheme competition.
         """
@@ -118,7 +133,8 @@ class BengaliEngine:
         """Conducts inference using the test set.
 
         Returns:
-            pd.DataFrame -- Predictions ready for submission to the leaderboard
+            submission_df {pd.DataFrame} -- A predictions dataframe ready for submission 
+            to the public leaderboard.
         """
         def _conduct_inference() -> defaultdict:
             predictions = defaultdict(list)
@@ -126,9 +142,8 @@ class BengaliEngine:
             for loader in testing_loaders:
                 for batch, data in enumerate(loader):
                     image = self.trainer._load_to_gpu_float(data["image"])
-                    image_id = data["image_id"]
                     grapheme, vowel, consonant = self.trainer.model(image)
-                    for idx, img_id in enumerate(image_id):
+                    for idx, img_id in enumerate(data["image_id"]):
                         predictions["grapheme"].append(
                             grapheme[idx].cpu().detach().numpy())
                         predictions["vowel"].append(
@@ -139,15 +154,15 @@ class BengaliEngine:
 
             return predictions
 
-        def _get_final_preds(preds: defaultdict) -> Dict:
+        def _get_maximum_probs(preds: defaultdict) -> Dict:
             return {
                 "final_grapheme":
-                np.argmax(np.mean(final_predictions["grapheme"], axis=0),
+                np.argmax(np.mean(preds["grapheme"], axis=0),
                           axis=1),
                 "final_vowel":
-                np.argmax(np.mean(final_predictions["vowel"], axis=0), axis=1),
+                np.argmax(np.mean(preds["vowel"], axis=0), axis=1),
                 "final_consonant":
-                np.argmax(np.mean(final_predictions["consonant"], axis=0),
+                np.argmax(np.mean(preds["consonant"], axis=0),
                           axis=1)
             }
 
@@ -175,7 +190,7 @@ class BengaliEngine:
             final_predictions["vowel"].append(predictions["vowel"])
             final_predictions["consonant"].append(predictions["consonant"])
             if idx == 0:
-                final_predictions["image_id"].append(predictions["image_id"])
+                final_predictions["image_id"].extend(predictions["image_id"])
 
-        pred_dictionary = _get_final_preds(preds=final_predictions)
+        pred_dictionary = _get_maximum_probs(preds=final_predictions)
         return _create_submission_df(pred_dict=pred_dictionary)

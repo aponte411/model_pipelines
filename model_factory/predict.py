@@ -37,7 +37,6 @@ def main() -> Optional:
     bengali = engines.BengaliEngine(trainer=trainer, params=ENGINE_PARAMS)
     submission = bengali.run_inference_engine(model_dir='trained_models')
     LOGGER.info(submission)
-    # WIP
 
 
 if __name__ == "__main__":
