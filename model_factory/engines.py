@@ -137,9 +137,11 @@ class BengaliEngine:
                         key=model_with_val_fold,
                         creds=creds)
             LOGGER.info(
-                f'Training loss: {train_loss}, Training score: {train_score}')
+                f'Training loss: {train_loss:.3f}, Training score: {train_score:.3f}'
+            )
             LOGGER.info(
-                f'Validation loss: {val_loss}, Validation score: {val_score}')
+                f'Validation loss: {val_loss:.3f}, Validation score: {val_score:.3f}'
+            )
             self.trainer.scheduler.step(val_loss)
             self.trainer.early_stopping(val_score, self.trainer.model)
             if self.trainer.early_stopping.early_stop:
