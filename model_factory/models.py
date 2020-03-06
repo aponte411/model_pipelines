@@ -79,28 +79,6 @@ class ResNet34(nn.Module, BaseModel):
         return linear1, linear2, linear3
 
 
-class ResNet34(nn.Module, BaseModel):
-    def __init__(self, pretrained: bool, **kwds):
-        super().__init__(**kwds)
-        if pretrained:
-            self.model = pretrainedmodels.__dict__["resnet34"](
-                pretrained="imagenet")
-        else:
-            self.model = pretrainedmodels.__dict__["resnet34"](pretrained=None)
-        self.linear1 = nn.Linear(512, 168)
-        self.linear2 = nn.Linear(512, 11)
-        self.linear3 = nn.Linear(512, 7)
-
-    def forward(self, x: torch.tensor) -> Tuple:
-        batch_size = x.shape[0]
-        features = self.model.features(x)
-        features = F.adaptive_avg_pool2d(features, 1).reshape(batch_size, -1)
-        linear1 = self.linear1(features)
-        linear2 = self.linear2(features)
-        linear3 = self.linear3(features)
-        return linear1, linear2, linear3
-
-    
 class ResNet50(nn.Module, BaseModel):
     def __init__(self, pretrained: bool, **kwds):
         super().__init__(**kwds)
@@ -121,6 +99,7 @@ class ResNet50(nn.Module, BaseModel):
         linear2 = self.linear2(features)
         linear3 = self.linear3(features)
         return linear1, linear2, linear3
+
 
 # WIP
 class ResNet34Lightning(pl.LightningModule):
