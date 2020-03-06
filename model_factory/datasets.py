@@ -154,7 +154,7 @@ class BengaliDataSetTest(Dataset):
         ])
 
     def __len__(self):
-        return len(self.image_ids)
+        return len(self.image_id)
 
     def __getitem__(self, item: int) -> Dict:
         def _prepare_image() -> Image:

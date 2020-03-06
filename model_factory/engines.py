@@ -178,4 +178,4 @@ class BengaliEngine:
                 final_predictions["image_id"].append(predictions["image_id"])
 
         pred_dictionary = _get_final_preds(preds=final_predictions)
-        return _create_submission_df(preds=pred_dictionary)
+        return _create_submission_df(pred_dict=pred_dictionary)
