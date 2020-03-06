@@ -39,8 +39,9 @@ def macro_recall(preds: torch.tensor,
     def _get_recalls(y_true: torch.tensor, pred_labels: List) -> List[float]:
         y_true = y_true.cpu().numpy()
         return [
-            metrics.recall_score(pred_labels[idx], y_true[:, idx])
-            for idx in range(3)
+            metrics.recall_score(pred_labels[idx],
+                                 y_true[:, idx],
+                                 average='macro') for idx in range(3)
         ]
 
     preds = _split_preds(preds)
