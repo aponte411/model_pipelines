@@ -163,12 +163,14 @@ class BengaliEngine:
                 np.argmax(np.mean(preds["vowel"], axis=0), axis=1),
                 "final_consonant":
                 np.argmax(np.mean(preds["consonant"], axis=0),
-                          axis=1)
+                          axis=1),
+                "image_ids":
+                preds["image_id"]
             }
 
         def _create_submission_df(pred_dict: Dict) -> pd.DataFrame:
             predictions = []
-            for idx, image_id in enumerate(pred_dict["image_id"]):
+            for idx, image_id in enumerate(pred_dict["image_ids"]):
                 predictions.append((f"{image_id}_grapheme_root",
                                     pred_dict["final_grapheme"][idx]))
                 predictions.append((f"{image_id}_vowel_diacritic",
@@ -189,7 +191,7 @@ class BengaliEngine:
             final_predictions["grapheme"].append(predictions["grapheme"])
             final_predictions["vowel"].append(predictions["vowel"])
             final_predictions["consonant"].append(predictions["consonant"])
-            if idx == 0:
+            if idx == 1:
                 final_predictions["image_id"].extend(predictions["image_id"])
 
         pred_dictionary = _get_maximum_probs(preds=final_predictions)
