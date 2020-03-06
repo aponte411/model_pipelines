@@ -142,7 +142,7 @@ class BengaliDataSetTest(Dataset):
         self._create_augmentations()
 
     def _create_attributes(self) -> None:
-        self.image_ids = self.df.image_id.values
+        self.image_id = self.df.image_id.values
         self.image_arr = self.df.iloc[:, 1:].values
 
     def _create_augmentations(self) -> None:

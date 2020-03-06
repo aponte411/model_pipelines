@@ -1,7 +1,8 @@
 import os
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import click
+import pandas as pd
 import numpy as np
 
 import datasets
@@ -13,11 +14,8 @@ import utils
 LOGGER = utils.get_logger(__name__)
 
 
-@click.command()
-@click.option('-m', '--competition', type=str, default='quora')
-@click.option('-lm', '--load-model', type=bool, default=True)
-@click.option('-sm', '--save-model', type=bool, default=False)
-def main(submit: bool) -> pd.DataFrame:
+
+def main() -> Optional:
     ENGINE_PARAMS = {
         "train_path": "inputs/train-folds.csv",
         "test_path": "inputs",
@@ -35,9 +33,9 @@ def main(submit: bool) -> pd.DataFrame:
         "std": (0.229, 0.239, 0.225)
     }
     model = models.ResNet34(pretrained=True)
-    trainer = trainers.BengaliTrainer(model=model, model_name='restnet34')
-    bengali = engines.engaliEngine(trainer=trainer, params=ENGINE_PARAMS)
-    submission = bengali.run_inference_engine()
+    trainer = trainers.BengaliTrainer(model=model, model_name='resnet34')
+    bengali = engines.BengaliEngine(trainer=trainer, params=ENGINE_PARAMS)
+    submission = bengali.run_inference_engine(model_dir='trained_models')
     LOGGER.info(submission)
     # WIP
 

@@ -114,13 +114,13 @@ class BengaliEngine:
                 LOGGER.info(f"Early stopping at epoch: {epoch}")
                 break
 
-    def run_inference_engine(self) -> pd.DataFrame:
+    def run_inference_engine(self, model_dir: str) -> pd.DataFrame:
         """Conducts inference using the test set.
 
         Returns:
             pd.DataFrame -- Predictions ready for submission to the leaderboard
         """
-        def _conduct_inference() -> Dict:
+        def _conduct_inference() -> defaultdict:
             predictions = defaultdict(list)
             testing_loaders = self._get_all_testing_loaders()
             for loader in testing_loaders:
@@ -139,7 +139,7 @@ class BengaliEngine:
 
             return predictions
 
-        def _get_final_preds(preds: Dict) -> Dict:
+        def _get_final_preds(preds: defaultdict) -> Dict:
             return {
                 "final_grapheme":
                 np.argmax(np.mean(final_predictions["grapheme"], axis=0),
@@ -165,7 +165,8 @@ class BengaliEngine:
 
         final_predictions = defaultdict(list)
         for idx in range(1, self.params["test_loops"]):
-            model_state_path = f'{self.params["model_dir"]}/{self.model_name}_fold{idx}.pth'
+            LOGGER.info(f'Conducting inference for fold {idx}')
+            model_state_path = f'{model_dir}/restnet34_bengali_fold{idx}.pth'
             self.trainer.load_model_locally(model_path=model_state_path)
             self.trainer.model.to(self.trainer.device)
             self.trainer.model.eval()
