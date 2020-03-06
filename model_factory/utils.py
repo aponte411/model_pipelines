@@ -1,3 +1,4 @@
+import datetime
 import glob
 import logging
 import os
@@ -117,3 +118,8 @@ def pickle_images(input: str, output_dir: str):
         image_array = df.drop('image_id', axis=1).values
         for idx, image_id in tqdm(enumerate(image_ids), total=len(image_ids)):
             joblib.dump(image_array[idx, :], f"{output_dir}/{image_id}.p")
+
+
+def generate_timestamp() -> str:
+    return datetime.datetime.today().strftime("%B -%d,- %Y -%H:%M").replace(
+        " ", "").replace(",", "")

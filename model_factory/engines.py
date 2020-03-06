@@ -1,4 +1,3 @@
-import datetime
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
@@ -138,6 +137,7 @@ class BengaliEngine:
                 break
 
     def run_inference_engine(self,
+                             model_name: str,
                              model_dir: str,
                              to_csv: bool = False,
                              output_dir: str = None,
@@ -194,7 +194,7 @@ class BengaliEngine:
         final_predictions = defaultdict(list)
         for idx in range(1, self.params["test_loops"]):
             LOGGER.info(f'Conducting inference for fold {idx}')
-            model_name = f'restnet34_bengali_fold{idx}.pth'
+            model_name = f'{model_name}_bengali_fold{idx}.pth'
             model_state_path = f'{model_dir}/{model_name}'
             if load_from_s3:
                 self.trainer.load_model_from_s3(filename=model_state_path,
@@ -213,8 +213,7 @@ class BengaliEngine:
         pred_dictionary = _get_maximum_probs(preds=final_predictions)
         submission_df = _create_submission_df(pred_dict=pred_dictionary)
         if to_csv:
-            timestamp = datetime.datetime.today().strftime(
-                "%B -%d,- %Y -%H:%M").replace(" ", "").replace(",", "")
+            timestamp = utils.generate_timestamp()
             output_path = f"{output_dir}/submission_{timestamp}"
             LOGGER.info(f'Saving submission dataframe to {output_path}')
             submission_df.to_csv(output_path, index=False)
