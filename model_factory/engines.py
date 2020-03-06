@@ -94,7 +94,9 @@ class BengaliEngine:
             loaders.append(_get_loader(df=df))
         return loaders
 
-    def run_training_engine(self) -> None:
+    def run_training_engine(self,
+                            save_to_s3: bool = False,
+                            creds: Dict = None) -> None:
         """
         Trains a ResNet34 model for the BengaliAI bengali grapheme competition.
         """
@@ -118,6 +120,11 @@ class BengaliEngine:
             val_loss, val_score = self.trainer.evaluate(val)
             if val_score > best_score:
                 best_score = val_score
+                if save_to_s3:
+                    self.trainer.save_model_to_s3(
+                        filename=self.model_state_path,
+                        key=self.model_name,
+                        creds=creds)
                 self.trainer.save_model_locally(
                     model_path=self.model_state_path)
             LOGGER.info(
@@ -190,10 +197,9 @@ class BengaliEngine:
             model_name = f'restnet34_bengali_fold{idx}.pth'
             model_state_path = f'{model_dir}/{model_name}'
             if load_from_s3:
-                self.trainer.load_model_from_s3(
-                    filename=model_state_path, 
-                    key=model_name, creds=creds
-                )
+                self.trainer.load_model_from_s3(filename=model_state_path,
+                                                key=model_name,
+                                                creds=creds)
             self.trainer.load_model_locally(model_path=model_state_path)
             self.trainer.model.to(self.trainer.device)
             self.trainer.model.eval()

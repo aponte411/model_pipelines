@@ -167,16 +167,54 @@ class BengaliTrainer(BaseTrainer):
     def save_model_locally(self, model_path: str):
         LOGGER.info(f'Saving model to {model_path}')
         torch.save(self.model.state_dict(), model_path)
-    
+
     def save_model_to_s3(self, filename: str, key: str):
         s3 = utils.S3Client()
+        s3.upload_file(filename=filename, key=key)
+
+    def save_model_to_s3(self, filename: str, key: str, creds: Dict):
+        """
+        Saves trained model to s3 bucket. Requires credentials
+        dictionary. E.g.
+
+            CREDENTIALS = {}
+            CREDENTIALS['aws_access_key_id'] = os.environ.get("aws_access_key_id")
+            CREDENTIALS['aws_secret_access_key'] = os.environ.get("aws_secret_access_key")
+            CREDENTIALS['bucket'] = os.environ.get("bucket")
+
+        Args:
+            filename {str} -- Path to model directory
+            key {str} -- Object name
+            creds {Dict} -- Credentials dictionary containing AWS aws_access_key_id,
+            aws_secret_access_key, and bucket.
+        """
+        LOGGER.info(f'Saving model to s3 bucket..')
+        s3 = utils.S3Client(user=creds["aws_access_key_id"],
+                            password=creds["aws_secret_access_key"],
+                            bucket=creds["bucket"])
         s3.upload_file(filename=filename, key=key)
 
     def load_model_locally(self, model_path: str):
         LOGGER.info(f'Loading model from {model_path}')
         self.model.load_state_dict(torch.load(model_path))
-        
+
     def load_model_from_s3(self, filename: str, key: str, creds: Dict):
+        """
+        Loads trained model from s3 bucket. Requires credentials
+        dictionary. E.g.
+
+            CREDENTIALS = {}
+            CREDENTIALS['aws_access_key_id'] = os.environ.get("aws_access_key_id")
+            CREDENTIALS['aws_secret_access_key'] = os.environ.get("aws_secret_access_key")
+            CREDENTIALS['bucket'] = os.environ.get("bucket")
+
+        Args:
+            filename {str} -- Path to model directory
+            key {str} -- Object name
+            creds {Dict} -- Credentials dictionary containing AWS aws_access_key_id,
+            aws_secret_access_key, and bucket.
+        """
+        LOGGER.info(f'Loading model from s3 bucket..')
         s3 = utils.S3Client(user=creds["aws_access_key_id"],
                             password=creds["aws_secret_access_key"],
                             bucket=creds["bucket"])
