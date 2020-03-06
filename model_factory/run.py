@@ -54,7 +54,7 @@ def main(data: str) -> Optional:
                 "std": (0.229, 0.239, 0.225)
             }
             model = ResNet34(pretrained=True)
-            trainer = BengaliTrainer(model=model, model_name='restnet34')
+            trainer = BengaliTrainer(model=model, model_name='resnet34')
             bengali = BengaliEngine(trainer=trainer, params=ENGINE_PARAMS)
             bengali.run_training_engine()
         LOGGER.info(f'Training complete!')
