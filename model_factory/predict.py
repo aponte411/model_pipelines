@@ -18,28 +18,27 @@ LOGGER = utils.get_logger(__name__)
 @click.option('-lm', '--load-model', type=bool, default=True)
 @click.option('-sm', '--save-model', type=bool, default=False)
 def main(submit: bool) -> pd.DataFrame:
-
-    PARAMS = {
-        "train_path": "inputs/bengali_grapheme/train-folds.csv",
-        "test_path": "inputs/bengali_grapheme",
-        "pickle_path": "inputs/bengali_grapheme/pickled_images",
-        "image_height": 137,
-        "image_width": 236,
-        "train_batch_size": 64,
-        "test_batch_size": 64,
-        "mean": (0.485, 0.456, 0.406),
-        "std": (0.229, 0.239, 0.225),
-        "epochs": 5,
+    ENGINE_PARAMS = {
+        "train_path": "inputs/train-folds.csv",
+        "test_path": "inputs",
+        "pickle_path": "inputs/pickled_images",
+        "model_dir": "trained_models",
         "train_folds": [0],
         "val_folds": [4],
-        "test_loops": 5
+        "train_batch_size": 64,
+        "test_batch_size": 32,
+        "epochs": 3,
+        "test_loops": 5,
+        "image_height": 137,
+        "image_width": 236,
+        "mean": (0.485, 0.456, 0.406),
+        "std": (0.229, 0.239, 0.225)
     }
-
-    model = models.ResNet34(pretrained=False)
-    trainer = trainers.BengaliTrainer(model=model)
-    bengali = engines.BengaliEngine(trainer=trainer, params=PARAMS)
+    model = models.ResNet34(pretrained=True)
+    trainer = trainers.BengaliTrainer(model=model, model_name='restnet34')
+    bengali = engines.engaliEngine(trainer=trainer, params=ENGINE_PARAMS)
     submission = bengali.run_inference_engine()
-    LOGGER.info(submission.head())
+    LOGGER.info(submission)
     # WIP
 
 
