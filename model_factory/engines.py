@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 import utils
 from datasets import BengaliDataSetTest, BengaliDataSetTrain
-from trainers import BengaliTrainer, Trainer
+from trainers import BengaliTrainer, BaseTrainer
 
 LOGGER = utils.get_logger(__name__)
 
@@ -20,12 +20,11 @@ class BengaliEngine:
     into a single object that contains functionality to train models
     and conduct inference.
 
-    Arguments:
-        name {str} - name of engine
+    Args:
         trainer {Trainer} - Trainer object that handles training
         params {Dict} - parameter dictionary
     """
-    def __init__(self, trainer: Trainer, params: Dict, **kwds):
+    def __init__(self, trainer: BaseTrainer, params: Dict, **kwds):
         super().__init__(**kwds)
         self.trainer = trainer
         self.training_constructor = BengaliDataSetTrain
@@ -55,7 +54,7 @@ class BengaliEngine:
                           shuffle=True,
                           num_workers=4)
 
-    def _get_all_testing_loaders(self):
+    def _get_all_testing_loaders(self) -> List[DataLoader]:
         def _get_loader(df: pd.DataFrame) -> DataLoader:
             test_set = self.test_constructor(
                 df=df,
@@ -77,11 +76,13 @@ class BengaliEngine:
 
     def run_training_engine(self,
                             load: bool = False,
-                            save: bool = True,
-                            model_dir: str = "trained_models") -> None:
+                            save: bool = True) -> None:
         """
         Trains a ResNet34 model for the BengaliAI bengali grapheme competition.
         """
+        LOGGER.info(f'Training the model using folds: {self.params["train_folds"]}')
+        LOGGER.info(f'Validating the model using folds {self.params["val_folds"]}')
+        LOGGER.info(f'Using {torch.cuda.device_count()} GPUs')
         if torch.cuda.device_count() > 1:
             self.trainer.model = nn.DataParallel(self.trainer.model)
         train = self._get_training_loader(folds=self.params["train_folds"],
@@ -89,7 +90,7 @@ class BengaliEngine:
         val = self._get_training_loader(folds=self.params["val_folds"],
                                         name='val')
         self.model_name = f"{self.trainer.get_model_name()}_bengali"
-        self.model_state_path = f"{model_dir}/{self.model_name}_fold{self.params['val_folds'][0]}.pth"
+        self.model_state_path = f"{self.params['model_dir']}/{self.model_name}_fold{self.params['val_folds'][0]}.pth"
         best_score = -1
         for epoch in range(1, self.params["epochs"]+1):
             LOGGER.info(f'EPOCH: {epoch}')
@@ -99,7 +100,7 @@ class BengaliEngine:
                 best_score = val_score
                 self.trainer.save_model_locally(model_path=self.model_state_path)
             LOGGER.info(
-                f'Train loss: {train_loss}, Train score: {train_score}')
+                f'Training loss: {train_loss}, Training score: {train_score}')
             LOGGER.info(
                 f'Validation loss: {val_loss}, Validation score: {val_score}')
             self.trainer.scheduler.step(val_loss)
@@ -114,14 +115,13 @@ class BengaliEngine:
         Returns:
             pd.DataFrame -- Predictions ready for submission to the leaderboard
         """
-        def _inference() -> Dict:
+        def _conduct_inference() -> Dict:
             predictions = {}
             testing_loaders = self._get_all_testing_loaders()
             for loader in testing_loaders:
                 for batch, data in enumerate(loader):
-                    image = data["image"]
-                    img_id = data["image_id"]
-                    image = image.to(self.trainer.device, dtype=torch.float)
+                    image = self.trainer._load_to_gpu_float(data["image"])
+                    image_id = data["image_id"]
                     grapheme, vowel, consonant = self.trainer.model(image)
                     for idx, image_id in enumerate(img_id):
                         predictions["grapheme"] = grapheme[idx].cpu().detach(
@@ -158,17 +158,18 @@ class BengaliEngine:
 
             return pd.DataFrame(predictions, columns=["row_id", "target"])
 
-        final_predictions = {}
-        for idx in range(self.params["test_loops"]):
-            self.trainer.load_model_locally(model_path=self.model_state_path)
+        final_predictions = defaultdict(list)
+        for idx in range(1, self.params["test_loops"]):
+            model_state_path = f'{self.params["model_dir"]}/{self.model_name}_fold{idx}.pth'
+            self.trainer.load_model_locally(model_path=model_state_path)
             self.trainer.model.to(self.trainer.device)
             self.trainer.model.eval()
-            predictions = _inference()
-            final_predictions["grapheme"] = predictions["grapheme"]
-            final_predictions["vowel"] = predictions["vowel"]
-            final_predictions["consonant"] = predictions["consonant"]
+            predictions = _conduct_inference()
+            final_predictions["grapheme"].append(predictions["grapheme"])
+            final_predictions["vowel"].append(predictions["vowel"])
+            final_predictions["consonant"].append(predictions["consonant"])
             if idx == 0:
-                final_predictions["image_id"] = predictions["image_id"]
+                final_predictions["image_id"].append(predictions["image_id"])
 
         pred_dictionary = _get_final_preds(preds=final_predictions)
         return _create_submission_df(preds=pred_dictionary)

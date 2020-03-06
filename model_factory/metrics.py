@@ -10,18 +10,6 @@ import utils
 LOGGER = utils.get_logger(__name__)
 
 
-def hierarchical_macro_averaged_recall(df: pd.DataFrame) -> float:
-    scores = []
-    for component in [
-            'grapheme_root', 'consonant_diacritic', 'vowel_diacritic'
-    ]:
-        y_true_subset = df[df[component] == component]['target'].values
-        y_pred_subset = df[df[component] == component]['target'].values
-        scores.append(
-            metrics.recall_score(y_true_subset, y_pred_subset,
-                                 average='macro'))
-    return np.average(scores, weights=[2, 1, 1])
-
 
 def macro_recall(preds: torch.tensor,
                  y_true: torch.tensor,
@@ -48,8 +36,6 @@ def macro_recall(preds: torch.tensor,
     pred_labels = _get_labels(preds)
     recalls = _get_recalls(y_true, pred_labels)
     macro_averaged_recall = np.average(recalls, weights=[2, 1, 1])
-    LOGGER.info(
-        f'recall: grapheme {recalls[0]}, vowel {recalls[1]}, consonant {recalls[2]}, '
-        f'total {macro_averaged_recall}, y {y_true.shape}')
-
+    LOGGER.info(f'Recalls: Grapheme {recalls[0]:.3f}, Vowel {recalls[1]:.3f}, Consonant {recalls[2]:.3f}')
+    LOGGER.info(f'Hierarchical Macro-Averaged Recall: {macro_averaged_recall})')
     return macro_averaged_recall

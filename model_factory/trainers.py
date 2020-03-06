@@ -165,9 +165,11 @@ class BengaliTrainer(BaseTrainer):
         return torch.stack((one, two, three), dim=1)
 
     def save_model_locally(self, model_path: str):
+        LOGGER.info(f'Saving model to {model_path}')
         torch.save(self.model.state_dict(), model_path)
 
     def load_model_locally(self, model_path: str):
+        LOGGER.info(f'Loading model from {model_path}')
         self.model.load_state_dict(torch.load(model_path))
 
     def train(self, data_loader: DataLoader) -> Tuple[float, float]:
@@ -190,8 +192,8 @@ class BengaliTrainer(BaseTrainer):
 
         macro_recall_score = self.score(preds=final_preds,
                                         targets=final_targets)
-        LOGGER.info(f'loss: {final_loss/counter}')
-        LOGGER.info(f'macro-recall: {macro_recall_score}')
+        LOGGER.info(f'Training Loss: {final_loss/counter}')
+        LOGGER.info(f'Training Macro-Recall: {macro_recall_score}')
 
         return final_loss / counter, macro_recall_score
 
@@ -212,8 +214,8 @@ class BengaliTrainer(BaseTrainer):
 
             macro_recall_score = self.score(preds=final_preds,
                                             targets=final_targets)
-        LOGGER.info(f'loss: {final_loss/counter}')
-        LOGGER.info(f'macro-recall: {macro_recall_score}')
+        LOGGER.info(f'Validation Loss: {final_loss/counter}')
+        LOGGER.info(f'Validation Macro-Recall: {macro_recall_score}')
 
         return final_loss / counter, macro_recall_score
 
