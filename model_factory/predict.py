@@ -35,7 +35,7 @@ def main() -> Optional:
     model = models.ResNet34(pretrained=True)
     trainer = trainers.BengaliTrainer(model=model, model_name='resnet34')
     bengali = engines.BengaliEngine(trainer=trainer, params=ENGINE_PARAMS)
-    submission = bengali.run_inference_engine(model_dir='trained_models')
+    submission = bengali.run_inference_engine(model_dir='trained_models', to_csv=True, output_dir='inputs')
     LOGGER.info(submission)
 
 

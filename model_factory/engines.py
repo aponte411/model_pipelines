@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
+import datetime
 
 import click
 import numpy as np
@@ -129,7 +130,7 @@ class BengaliEngine:
                 LOGGER.info(f"Early stopping at epoch: {epoch}")
                 break
 
-    def run_inference_engine(self, model_dir: str) -> pd.DataFrame:
+    def run_inference_engine(self, model_dir: str, to_csv: False, output_dir: str = None) -> pd.DataFrame:
         """Conducts inference using the test set.
 
         Returns:
@@ -195,4 +196,11 @@ class BengaliEngine:
                 final_predictions["image_id"].extend(predictions["image_id"])
 
         pred_dictionary = _get_maximum_probs(preds=final_predictions)
-        return _create_submission_df(pred_dict=pred_dictionary)
+        submission_df = _create_submission_df(pred_dict=pred_dictionary)
+        if to_csv:
+            timestamp = datetime.datetime.today().strftime("%B -%d,- %Y -%H:%M").replace(" ", "").replace(",", "")
+            output_path = f"{output_dir}/submission_{timestamp}"
+            LOGGER.info(f'Saving submission dataframe to {output_path}')
+            submission_df.to_csv(output_path, index=False)
+            
+        return submission_df
