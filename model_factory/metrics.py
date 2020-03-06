@@ -10,7 +10,6 @@ import utils
 LOGGER = utils.get_logger(__name__)
 
 
-
 def macro_recall(preds: torch.tensor,
                  y_true: torch.tensor,
                  n_grapheme: int = 168,
@@ -36,6 +35,9 @@ def macro_recall(preds: torch.tensor,
     pred_labels = _get_labels(preds)
     recalls = _get_recalls(y_true, pred_labels)
     macro_averaged_recall = np.average(recalls, weights=[2, 1, 1])
-    LOGGER.info(f'Recalls: Grapheme {recalls[0]:.3f}, Vowel {recalls[1]:.3f}, Consonant {recalls[2]:.3f}')
-    LOGGER.info(f'Hierarchical Macro-Averaged Recall: {macro_averaged_recall})')
+    LOGGER.info(
+        f'Recalls: Grapheme {recalls[0]:.3f}, Vowel {recalls[1]:.3f}, Consonant {recalls[2]:.3f}'
+    )
+    LOGGER.info(
+        f'Hierarchical Macro-Averaged Recall: {macro_averaged_recall})')
     return macro_averaged_recall

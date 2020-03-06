@@ -1,6 +1,6 @@
+import datetime
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
-import datetime
 
 import click
 import numpy as np
@@ -130,7 +130,10 @@ class BengaliEngine:
                 LOGGER.info(f"Early stopping at epoch: {epoch}")
                 break
 
-    def run_inference_engine(self, model_dir: str, to_csv: False, output_dir: str = None) -> pd.DataFrame:
+    def run_inference_engine(self,
+                             model_dir: str,
+                             to_csv: False,
+                             output_dir: str = None) -> pd.DataFrame:
         """Conducts inference using the test set.
 
         Returns:
@@ -158,13 +161,11 @@ class BengaliEngine:
         def _get_maximum_probs(preds: defaultdict) -> Dict:
             return {
                 "final_grapheme":
-                np.argmax(np.mean(preds["grapheme"], axis=0),
-                          axis=1),
+                np.argmax(np.mean(preds["grapheme"], axis=0), axis=1),
                 "final_vowel":
                 np.argmax(np.mean(preds["vowel"], axis=0), axis=1),
                 "final_consonant":
-                np.argmax(np.mean(preds["consonant"], axis=0),
-                          axis=1),
+                np.argmax(np.mean(preds["consonant"], axis=0), axis=1),
                 "image_ids":
                 preds["image_id"]
             }
@@ -198,9 +199,10 @@ class BengaliEngine:
         pred_dictionary = _get_maximum_probs(preds=final_predictions)
         submission_df = _create_submission_df(pred_dict=pred_dictionary)
         if to_csv:
-            timestamp = datetime.datetime.today().strftime("%B -%d,- %Y -%H:%M").replace(" ", "").replace(",", "")
+            timestamp = datetime.datetime.today().strftime(
+                "%B -%d,- %Y -%H:%M").replace(" ", "").replace(",", "")
             output_path = f"{output_dir}/submission_{timestamp}"
             LOGGER.info(f'Saving submission dataframe to {output_path}')
             submission_df.to_csv(output_path, index=False)
-            
+
         return submission_df

@@ -1,9 +1,9 @@
 import os
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import click
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 import datasets
 import engines
@@ -12,7 +12,6 @@ import trainers
 import utils
 
 LOGGER = utils.get_logger(__name__)
-
 
 
 def main() -> Optional:
@@ -35,7 +34,9 @@ def main() -> Optional:
     model = models.ResNet34(pretrained=True)
     trainer = trainers.BengaliTrainer(model=model, model_name='resnet34')
     bengali = engines.BengaliEngine(trainer=trainer, params=ENGINE_PARAMS)
-    submission = bengali.run_inference_engine(model_dir='trained_models', to_csv=True, output_dir='inputs')
+    submission = bengali.run_inference_engine(model_dir='trained_models',
+                                              to_csv=True,
+                                              output_dir='inputs')
     LOGGER.info(submission)
 
 
