@@ -167,10 +167,20 @@ class BengaliTrainer(BaseTrainer):
     def save_model_locally(self, model_path: str):
         LOGGER.info(f'Saving model to {model_path}')
         torch.save(self.model.state_dict(), model_path)
+    
+    def save_model_to_s3(self, filename: str, key: str):
+        s3 = utils.S3Client()
+        s3.upload_file(filename=filename, key=key)
 
     def load_model_locally(self, model_path: str):
         LOGGER.info(f'Loading model from {model_path}')
         self.model.load_state_dict(torch.load(model_path))
+        
+    def load_model_from_s3(self, filename: str, key: str, creds: Dict):
+        s3 = utils.S3Client(user=creds["aws_access_key_id"],
+                            password=creds["aws_secret_access_key"],
+                            bucket=creds["bucket"])
+        s3.download_file(filename=filename, key=key)
 
     def train(self, data_loader: DataLoader) -> Tuple[float, float]:
         self.model.train()

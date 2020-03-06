@@ -132,8 +132,10 @@ class BengaliEngine:
 
     def run_inference_engine(self,
                              model_dir: str,
-                             to_csv: False,
-                             output_dir: str = None) -> pd.DataFrame:
+                             to_csv: bool = False,
+                             output_dir: str = None,
+                             load_from_s3: bool = False,
+                             creds: Dict = None) -> pd.DataFrame:
         """Conducts inference using the test set.
 
         Returns:
@@ -185,7 +187,13 @@ class BengaliEngine:
         final_predictions = defaultdict(list)
         for idx in range(1, self.params["test_loops"]):
             LOGGER.info(f'Conducting inference for fold {idx}')
-            model_state_path = f'{model_dir}/restnet34_bengali_fold{idx}.pth'
+            model_name = f'restnet34_bengali_fold{idx}.pth'
+            model_state_path = f'{model_dir}/{model_name}'
+            if load_from_s3:
+                self.trainer.load_model_from_s3(
+                    filename=model_state_path, 
+                    key=model_name, creds=creds
+                )
             self.trainer.load_model_locally(model_path=model_state_path)
             self.trainer.model.to(self.trainer.device)
             self.trainer.model.eval()
