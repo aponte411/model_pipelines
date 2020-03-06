@@ -41,9 +41,9 @@ This API is still a WIP so it will probably change.
 
 3. Setup your Model by wrapping an sklearn, xgboost, pytorch, or keras model into a Model object that we will use inside of a Trainer.
 
-3. Trainers groups training and inference functionality to abstract away a lot of detail and get you going. They have the ability to load/save trained models to/from s3 buckets (GCP coming soon). More functionality will be added to simplify things.
+3. Trainers group training and inference functionality to abstract away a lot of detail and get you going. They have the ability to load/save trained models to/from s3 buckets (GCP coming soon). More functionality will be added to simplify things.
 
-4. Create your Engine object and pass instantiate your model, pass it into your trainer, and pass the trainer to your Engine object. The Engine handles training using the `engine.run_training_engine()` method and inference using `engine.run_inference_engine()`. Look at the docstrings to see the required arguments.
+4. Create your Engine object and instantiate your model, pass it into your trainer, and pass the trainer to your Engine object. The Engine handles training using the `engine.run_training_engine()` method and inference using `engine.run_inference_engine()`. Look at the docstrings to see the required arguments.
 
 5. Optional: setup a credentials dictionary containing your AWS login information. Doing this will allow you to save and load models from and to an s3 bucket.
 
