@@ -91,13 +91,13 @@ class BengaliEngine:
         self.model_name = f"{self.trainer.get_model_name()}_bengali"
         self.model_state_path = f"{model_dir}/{self.model_name}_fold{self.params['val_folds'][0]}.pth"
         best_score = -1
-        for epoch in range(self.params["epochs"] + 1):
+        for epoch in range(1, self.params["epochs"]+1):
             LOGGER.info(f'EPOCH: {epoch}')
             train_loss, train_score = self.trainer.train(train)
             val_loss, val_score = self.trainer.evaluate(val)
             if val_score > best_score:
                 best_score = val_score
-                self.trainer.save_model_locally(model_path=model_state_path)
+                self.trainer.save_model_locally(model_path=self.model_state_path)
             LOGGER.info(
                 f'Train loss: {train_loss}, Train score: {train_score}')
             LOGGER.info(
