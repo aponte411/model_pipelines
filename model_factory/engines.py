@@ -120,13 +120,13 @@ class BengaliEngine:
             val_loss, val_score = self.trainer.evaluate(val)
             if val_score > best_score:
                 best_score = val_score
+                self.trainer.save_model_locally(
+                    model_path=self.model_state_path)
                 if save_to_s3:
                     self.trainer.save_model_to_s3(
                         filename=self.model_state_path,
                         key=self.model_name,
                         creds=creds)
-                self.trainer.save_model_locally(
-                    model_path=self.model_state_path)
             LOGGER.info(
                 f'Training loss: {train_loss}, Training score: {train_score}')
             LOGGER.info(
