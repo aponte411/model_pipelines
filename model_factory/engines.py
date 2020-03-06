@@ -1,4 +1,6 @@
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
+
 import click
 import numpy as np
 import pandas as pd
@@ -8,7 +10,7 @@ from torch.utils.data import DataLoader
 
 import utils
 from datasets import BengaliDataSetTest, BengaliDataSetTrain
-from trainers import BengaliTrainer, BaseTrainer
+from trainers import BaseTrainer, BengaliTrainer
 
 LOGGER = utils.get_logger(__name__)
 
@@ -80,8 +82,10 @@ class BengaliEngine:
         """
         Trains a ResNet34 model for the BengaliAI bengali grapheme competition.
         """
-        LOGGER.info(f'Training the model using folds: {self.params["train_folds"]}')
-        LOGGER.info(f'Validating the model using folds {self.params["val_folds"]}')
+        LOGGER.info(
+            f'Training the model using folds: {self.params["train_folds"]}')
+        LOGGER.info(
+            f'Validating the model using folds {self.params["val_folds"]}')
         LOGGER.info(f'Using {torch.cuda.device_count()} GPUs')
         if torch.cuda.device_count() > 1:
             self.trainer.model = nn.DataParallel(self.trainer.model)
@@ -92,13 +96,14 @@ class BengaliEngine:
         self.model_name = f"{self.trainer.get_model_name()}_bengali"
         self.model_state_path = f"{self.params['model_dir']}/{self.model_name}_fold{self.params['val_folds'][0]}.pth"
         best_score = -1
-        for epoch in range(1, self.params["epochs"]+1):
+        for epoch in range(1, self.params["epochs"] + 1):
             LOGGER.info(f'EPOCH: {epoch}')
             train_loss, train_score = self.trainer.train(train)
             val_loss, val_score = self.trainer.evaluate(val)
             if val_score > best_score:
                 best_score = val_score
-                self.trainer.save_model_locally(model_path=self.model_state_path)
+                self.trainer.save_model_locally(
+                    model_path=self.model_state_path)
             LOGGER.info(
                 f'Training loss: {train_loss}, Training score: {train_score}')
             LOGGER.info(
@@ -116,21 +121,21 @@ class BengaliEngine:
             pd.DataFrame -- Predictions ready for submission to the leaderboard
         """
         def _conduct_inference() -> Dict:
-            predictions = {}
+            predictions = defaultdict(list)
             testing_loaders = self._get_all_testing_loaders()
             for loader in testing_loaders:
                 for batch, data in enumerate(loader):
                     image = self.trainer._load_to_gpu_float(data["image"])
                     image_id = data["image_id"]
                     grapheme, vowel, consonant = self.trainer.model(image)
-                    for idx, image_id in enumerate(img_id):
-                        predictions["grapheme"] = grapheme[idx].cpu().detach(
-                        ).numpy()
-                        predictions["vowel"] = vowel[idx].cpu().detach().numpy(
-                        )
-                        predictions["consonant"] = consonant[idx].cpu().detach(
-                        ).numpy()
-                        predictions["image_id"] = image_id
+                    for idx, img_id in enumerate(image_id):
+                        predictions["grapheme"].append(
+                            grapheme[idx].cpu().detach().numpy())
+                        predictions["vowel"].append(
+                            vowel[idx].cpu().detach().numpy())
+                        predictions["consonant"].append(
+                            consonant[idx].cpu().detach().numpy())
+                        predictions["image_id"].append(img_id)
 
             return predictions
 

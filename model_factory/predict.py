@@ -37,9 +37,7 @@ def main(submit: bool) -> pd.DataFrame:
 
     model = models.ResNet34(pretrained=False)
     trainer = trainers.BengaliTrainer(model=model)
-    bengali = engines.BengaliEngine(name='bengali-engine',
-                                    trainer=trainer,
-                                    params=PARAMS)
+    bengali = engines.BengaliEngine(trainer=trainer, params=PARAMS)
     submission = bengali.run_inference_engine()
     LOGGER.info(submission.head())
     # WIP

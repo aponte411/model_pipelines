@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import Any, List, Tuple, Dict
+from typing import Any, Dict, List, Tuple
 
 import joblib
 import numpy as np
@@ -28,7 +28,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 import utils
-from datasets import BengaliDataSetTrain, BengaliDataSetTest
+from datasets import BengaliDataSetTest, BengaliDataSetTrain
 from metrics import macro_recall
 
 LOGGER = utils.get_logger(__name__)

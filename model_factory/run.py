@@ -1,12 +1,12 @@
-from typing import Optional
 import datetime
+from typing import Optional
+
 import click
 
-from engines import BengaliEngine
-from trainers import BengaliTrainer
-from models import ResNet34
-
 import utils
+from engines import BengaliEngine
+from models import ResNet34
+from trainers import BengaliTrainer
 
 LOGGER = utils.get_logger(__name__)
 
