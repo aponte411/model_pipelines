@@ -120,7 +120,8 @@ class BengaliEngine:
         val = self._get_training_loader(folds=self.params["val_folds"],
                                         name='val')
         self.model_name = f"{self.trainer.get_model_name()}_bengali"
-        self.model_state_path = f"{self.params['model_dir']}/{self.model_name}_fold{self.params['val_folds'][0]}.pth"
+        model_with_val_fold = f"{self.model_name}_fold{self.params['val_folds'][0]}"
+        self.model_state_path = f"{self.params['model_dir']}/{model_with_val_fold}.pth"
         best_score = -1
         for epoch in range(1, self.params["epochs"] + 1):
             LOGGER.info(f'EPOCH: {epoch}')
@@ -133,7 +134,7 @@ class BengaliEngine:
                 if save_to_s3:
                     self.trainer.save_model_to_s3(
                         filename=self.model_state_path,
-                        key=self.model_name,
+                        key=model_with_val_fold,
                         creds=creds)
             LOGGER.info(
                 f'Training loss: {train_loss}, Training score: {train_score}')
