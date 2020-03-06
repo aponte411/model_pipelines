@@ -22,7 +22,7 @@ class BengaliDataSetTrain(Dataset):
     """
     Dataset for training/validation.
 
-    Arguments:
+    Args:
         train_path {str} - path to train-folds.csv
         pickle_path {str} - path to pickled images
         folds {List[int]} - key for dataset fold
@@ -120,7 +120,7 @@ class BengaliDataSetTest(Dataset):
     """
     Dataset for inference.
 
-    Arguments: 
+    Args:
         df {pd.DataFrame} - parquet dataframe with test images
         image_height {int} - height of images
         image_width {int} - width of images

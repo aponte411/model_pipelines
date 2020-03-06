@@ -3,6 +3,7 @@ import click
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 import utils
@@ -10,6 +11,7 @@ from datasets import BengaliDataSetTest, BengaliDataSetTrain
 from trainers import BengaliTrainer, Trainer
 
 LOGGER = utils.get_logger(__name__)
+
 
 # requires CUDA to be enabled for OSX
 class BengaliEngine:
@@ -23,9 +25,8 @@ class BengaliEngine:
         trainer {Trainer} - Trainer object that handles training
         params {Dict} - parameter dictionary
     """
-    def __init__(self, name: str, trainer: Trainer, params: Dict, **kwds):
+    def __init__(self, trainer: Trainer, params: Dict, **kwds):
         super().__init__(**kwds)
-        self.name = name
         self.trainer = trainer
         self.training_constructor = BengaliDataSetTrain
         self.val_constructor = BengaliDataSetTrain
@@ -33,9 +34,12 @@ class BengaliEngine:
         self.params = params
         self.model_name = None
         self.model_state_path = None
-        self.model_path = None
 
     def _get_training_loader(self, folds: List[int], name: str) -> DataLoader:
+        if name == "val":
+            batch_size = self.params["test_batch_size"]
+        else:
+            batch_size = self.params["train_batch_size"]
         constructor = getattr(self, f'{name}_constructor')
         setattr(
             self, f'{name}_set',
@@ -47,7 +51,7 @@ class BengaliEngine:
                         mean=self.params["mean"],
                         std=self.params["std"]))
         return DataLoader(dataset=getattr(self, f'{name}_set'),
-                          batch_size=self.params["train_batch_size"],
+                          batch_size=batch_size,
                           shuffle=True,
                           num_workers=4)
 
@@ -78,21 +82,22 @@ class BengaliEngine:
         """
         Trains a ResNet34 model for the BengaliAI bengali grapheme competition.
         """
+        if torch.cuda.device_count() > 1:
+            self.trainer.model = nn.DataParallel(self.trainer.model)
         train = self._get_training_loader(folds=self.params["train_folds"],
                                           name='training')
         val = self._get_training_loader(folds=self.params["val_folds"],
                                         name='val')
         self.model_name = f"{self.trainer.get_model_name()}_bengali"
-        self.model_state_path = f"{model_dir}/{self.model_name}_fold{self.params['train_folds']}.pth"
-        self.model_path = f'{model_dir}/{self.model_name}.p'
+        self.model_state_path = f"{model_dir}/{self.model_name}_fold{self.params['val_folds'][0]}.pth"
         best_score = -1
-        for epoch in range(self.params["epochs"]):
+        for epoch in range(self.params["epochs"] + 1):
             LOGGER.info(f'EPOCH: {epoch}')
             train_loss, train_score = self.trainer.train(train)
             val_loss, val_score = self.trainer.evaluate(val)
             if val_score > best_score:
                 best_score = val_score
-                torch.save(self.trainer.model.state_dict(), model_state_path)
+                self.trainer.save_model_locally(model_path=model_state_path)
             LOGGER.info(
                 f'Train loss: {train_loss}, Train score: {train_score}')
             LOGGER.info(
@@ -101,13 +106,7 @@ class BengaliEngine:
             self.trainer.early_stopping(val_score, self.trainer.model)
             if self.trainer.early_stopping.early_stop:
                 LOGGER.info(f"Early stopping at epoch: {epoch}")
-                self.trainer.save_model_locally(key=model_path)
-                self.trainer.save_to_s3(filename=model_path,
-                                        key=self.model_name)
                 break
-
-        self.trainer.save_model_locally(key=model_path)
-        self.trainer.save_to_s3(filename=model_path, key=model_name)
 
     def run_inference_engine(self) -> pd.DataFrame:
         """Conducts inference using the test set.
@@ -161,8 +160,7 @@ class BengaliEngine:
 
         final_predictions = {}
         for idx in range(self.params["test_loops"]):
-            self.trainer.model.load_state_dict(
-                torch.load(self.model_state_path))
+            self.trainer.load_model_locally(model_path=self.model_state_path)
             self.trainer.model.to(self.trainer.device)
             self.trainer.model.eval()
             predictions = _inference()

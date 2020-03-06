@@ -27,7 +27,7 @@ LOGGER = utils.get_logger(__name__)
 class BaseTrainer:
     """Base class for training/inference
 
-    Arguements:
+    Args:
         model {Any} -- object from models module.
     """
     def __init__(self, model: Any, **kwds):
@@ -119,7 +119,7 @@ class BengaliTrainer(BaseTrainer):
         self.criterion = nn.CrossEntropyLoss()
         self.early_stopping = EarlyStopping(patience=5, verbose=True)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer, mode="min", patience=5, factor=0.3, verbose=True)
+            self.optimizer, mode="max", patience=5, factor=0.3, verbose=True)
 
     def get_model_name(self):
         return self.model_name
@@ -163,6 +163,12 @@ class BengaliTrainer(BaseTrainer):
     def stack_tensors(tensor) -> torch.tensor:
         one, two, three = tensor
         return torch.stack((one, two, three), dim=1)
+
+    def save_model_locally(self, model_path: str):
+        torch.save(self.model.state_dict(), model_path)
+
+    def load_model_locally(self, model_path: str):
+        self.model.load_state_dict(torch.load(model_path))
 
     def train(self, data_loader: DataLoader) -> Tuple[float, float]:
         self.model.train()

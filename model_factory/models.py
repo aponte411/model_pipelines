@@ -70,12 +70,12 @@ class ResNet34(nn.Module, BaseModel):
         self.linear3 = nn.Linear(512, 7)
 
     def forward(self, x: torch.tensor) -> Tuple:
-        batch_size, _, _, _ = x.shape
-        x = self.model.features(x)
-        x = F.adaptive_avg_pool2d(x, 1).reshape(batch_size, -1)
-        linear1 = self.linear1(x)
-        linear2 = self.linear2(x)
-        linear3 = self.linear3(x)
+        batch_size = x.shape[0]
+        features = self.model.features(x)
+        features = F.adaptive_avg_pool2d(features, 1).reshape(batch_size, -1)
+        linear1 = self.linear1(features)
+        linear2 = self.linear2(features)
+        linear3 = self.linear3(features)
         return linear1, linear2, linear3
 
 

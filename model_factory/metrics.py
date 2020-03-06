@@ -23,8 +23,8 @@ def hierarchical_macro_averaged_recall(df: pd.DataFrame) -> float:
     return np.average(scores, weights=[2, 1, 1])
 
 
-def macro_recall(y_true: torch.tensor,
-                 preds: torch.tensor,
+def macro_recall(preds: torch.tensor,
+                 y_true: torch.tensor,
                  n_grapheme: int = 168,
                  n_vowel: int = 11,
                  n_consonant: int = 7) -> float:

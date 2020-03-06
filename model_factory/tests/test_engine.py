@@ -21,10 +21,9 @@ def params():
 def test_attributes(params):
     model = models.ResNet34(pretrained=False)
     trainer = trainers.BengaliTrainer(model=model)
-    bengali = engines.BengaliEngine(name='bengali-engine',
-                                    trainer=trainer,
-                                    params=params)
+    bengali = engines.BengaliEngine(trainer=trainer, params=params)
     assert isinstance(bengali.trainer, trainers.BaseTrainer)
-    assert issubclass(bengali.training_constructor, datasets.BengaliDataSetTrain)
+    assert issubclass(bengali.training_constructor,
+                      datasets.BengaliDataSetTrain)
     assert issubclass(bengali.val_constructor, datasets.BengaliDataSetTrain)
     assert issubclass(bengali.test_constructor, datasets.BengaliDataSetTest)

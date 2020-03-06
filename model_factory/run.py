@@ -13,7 +13,7 @@ LOGGER = utils.get_logger(__name__)
 
 @click.command()
 @click.option('-d', '--data', type=str, default='bengali')
-def runner(data: str) -> Optional:
+def main(data: str) -> Optional:
     if data == 'bengali':
         TRAINING_PARAMS = {
             0: {
@@ -38,24 +38,22 @@ def runner(data: str) -> Optional:
                 "train_path": "inputs/train-folds.csv",
                 "test_path": "inputs",
                 "pickle_path": "inputs/pickled_images",
+                "train_folds": fold_dict['train'],
+                "val_folds": fold_dict['val'],
+                "train_batch_size": 64,
+                "test_batch_size": 32,
+                "epochs": 3,
+                "test_loops": 5,
                 "image_height": 137,
                 "image_width": 236,
                 "mean": (0.485, 0.456, 0.406),
-                "std": (0.229, 0.239, 0.225),
-                "train_folds": fold_dict['train'],
-                "val_folds": fold_dict['val'],
-                "test_loops": 5,
-                "train_batch_size": 64,
-                "test_batch_size": 32,
-                "epochs": 3
+                "std": (0.229, 0.239, 0.225)
             }
             model = ResNet34(pretrained=True)
             trainer = BengaliTrainer(model=model, model_name='restnet34')
-            bengali = BengaliEngine(name='bengali-engine',
-                                    trainer=trainer,
-                                    params=PARAMS)
+            bengali = BengaliEngine(trainer=trainer, params=PARAMS)
             bengali.run_training_engine(model_dir='trained_models')
 
 
 if __name__ == "__main__":
-    runner()
+    main()
