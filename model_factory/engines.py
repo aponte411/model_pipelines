@@ -98,6 +98,15 @@ class BengaliEngine:
                             creds: Dict = None) -> None:
         """
         Trains a ResNet34 model for the BengaliAI bengali grapheme competition.
+
+        Args:
+            save_to_s3 {bool} - save model to s3 bucket
+            creds {Dict} - Dictionary containing AWS credentials. Requires
+            aws_access_key_id, aws_secret_access_key, bucket. E.g.
+                CREDENTIALS = {}
+                CREDENTIALS['aws_access_key_id'] = os.environ.get("aws_access_key_id")
+                CREDENTIALS['aws_secret_access_key'] = os.environ.get("aws_secret_access_key")
+                CREDENTIALS['bucket'] = os.environ.get("bucket")
         """
         LOGGER.info(
             f'Training the model using folds: {self.params["train_folds"]}')
@@ -144,6 +153,22 @@ class BengaliEngine:
                              load_from_s3: bool = False,
                              creds: Dict = None) -> pd.DataFrame:
         """Conducts inference using the test set.
+
+        Arguments:
+            model_name {str} -- Name of the trained model.
+            model_dir {str} -- Path to where the model is stored.
+
+        Keyword Arguments:
+            to_csv {bool} -- Save to csv file (default: {False})
+            output_dir {str} -- Path to output directory (default: {None})
+            load_from_s3 {bool} -- Load trained model from s3 bucket (default: {False})
+            creds {Dict} -- Dictionary containing AWS credentials. Requires
+            aws_access_key_id, aws_secret_access_key, bucket. (default: {None})
+                E.g.
+                CREDENTIALS = {}
+                CREDENTIALS['aws_access_key_id'] = os.environ.get("aws_access_key_id")
+                CREDENTIALS['aws_secret_access_key'] = os.environ.get("aws_secret_access_key")
+                CREDENTIALS['bucket'] = os.environ.get("bucket")
 
         Returns:
             submission_df {pd.DataFrame} -- A predictions dataframe ready for submission 
