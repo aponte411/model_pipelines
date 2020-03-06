@@ -168,10 +168,6 @@ class BengaliTrainer(BaseTrainer):
         LOGGER.info(f'Saving model to {model_path}')
         torch.save(self.model.state_dict(), model_path)
 
-    def save_model_to_s3(self, filename: str, key: str):
-        s3 = utils.S3Client()
-        s3.upload_file(filename=filename, key=key)
-
     def save_model_to_s3(self, filename: str, key: str, creds: Dict):
         """
         Saves trained model to s3 bucket. Requires credentials
