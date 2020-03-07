@@ -87,11 +87,10 @@ class ResNet50(nn.Module, BaseModel):
             self.model = pretrainedmodels.__dict__["resnet50"](
                 pretrained="imagenet")
         else:
-            self.model = pretrainedmodels.__dict__["resnet50"](
-                pretrained=None)
-        self.linear1 = nn.Linear(512, 168)
-        self.linear2 = nn.Linear(512, 11)
-        self.linear3 = nn.Linear(512, 7)
+            self.model = pretrainedmodels.__dict__["resnet50"](pretrained=None)
+        self.linear1 = nn.Linear(2048, 168)
+        self.linear2 = nn.Linear(2048, 11)
+        self.linear3 = nn.Linear(2048, 7)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor]:
         batch_size = x.shape[0]
@@ -102,8 +101,8 @@ class ResNet50(nn.Module, BaseModel):
         linear3 = self.linear3(features)
         return linear1, linear2, linear3
 
-    
-class SeResNext(nn.Module, BaseModel):
+
+class SeResNext101(nn.Module, BaseModel):
     def __init__(self, pretrained: bool = True, **kwds):
         super().__init__(**kwds)
         if pretrained:
@@ -112,9 +111,9 @@ class SeResNext(nn.Module, BaseModel):
         else:
             self.model = pretrainedmodels.__dict__["se_resnext101_32x4d"](
                 pretrained=None)
-        self.linear1 = nn.Linear(512, 168)
-        self.linear2 = nn.Linear(512, 11)
-        self.linear3 = nn.Linear(512, 7)
+        self.linear1 = nn.Linear(2048, 168)
+        self.linear2 = nn.Linear(2048, 11)
+        self.linear3 = nn.Linear(2048, 7)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor]:
         batch_size = x.shape[0]
@@ -124,8 +123,8 @@ class SeResNext(nn.Module, BaseModel):
         linear2 = self.linear2(features)
         linear3 = self.linear3(features)
         return linear1, linear2, linear3
-        
-            
+
+
 # WIP
 class ResNet34Lightning(pl.LightningModule):
     def __init__(self, params: Dict):
