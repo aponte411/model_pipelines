@@ -10,5 +10,5 @@ MODEL_DISPATCHER = {
     "resnet34":
     models.ResNet34(pretrained=True),
     "resnet50":
-    models.ResNet40(pretrained=True)
+    models.ResNet50(pretrained=True)
 }
