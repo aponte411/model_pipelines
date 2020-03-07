@@ -39,6 +39,7 @@ TRAINING_PARAMS = {
 
 @click.command()
 @click.option('-m', '--model-name', type=str, default='resnet34')
+@click.option('-tr', '--train', type=bool, default=True)
 @click.option('-inf', '--inference', type=bool, default=False)
 @click.option('-train',
               '--train-path',
@@ -54,37 +55,41 @@ TRAINING_PARAMS = {
 @click.option('-trainb', '--train-batch-size', type=int, default=64)
 @click.option('-testb', '--test-batch-size', type=int, default=32)
 @click.option('-ep', '--epochs', type=int, default=5)
-def run_bengali_engine(model_name: str, inference: bool, train_path: str,
-                       test_path: str, pickle_path: str, submission_dir: str,
-                       model_dir: str, train_batch_size: int,
-                       test_batch_size: int, epochs: int) -> Optional:
-    timestamp = utils.generate_timestamp()
-    LOGGER.info(f'Training started {timestamp}')
-    for loop, fold_dict in TRAINING_PARAMS.items():
-        LOGGER.info(f'Training loop: {loop}')
-        ENGINE_PARAMS = {
-            "train_path": train_path,
-            "test_path": test_path,
-            "pickle_path": pickle_path,
-            "model_dir": model_dir,
-            "submission_dir": submission_dir,
-            "train_folds": fold_dict['train'],
-            "val_folds": fold_dict['val'],
-            "train_batch_size": train_batch_size,
-            "test_batch_size": test_batch_size,
-            "epochs": epochs,
-            "image_height": 137,
-            "image_width": 236,
-            "mean": (0.485, 0.456, 0.406),
-            "std": (0.229, 0.239, 0.225),
-            # 1 loop per test parquet file
-            "test_loops": 5,
-        }
-        model = MODEL_DISPATCHER.get(model_name)
-        trainer = trainers.BengaliTrainer(model=model, model_name=model_name)
-        bengali = engines.BengaliEngine(trainer=trainer, params=ENGINE_PARAMS)
-        bengali.run_training_engine(save_to_s3=True, creds=CREDENTIALS)
-    LOGGER.info(f'Training complete!')
+def run_bengali_engine(model_name: str, train: bool, inference: bool,
+                       train_path: str, test_path: str, pickle_path: str,
+                       submission_dir: str, model_dir: str,
+                       train_batch_size: int, test_batch_size: int,
+                       epochs: int) -> Optional:
+    if train:
+        timestamp = utils.generate_timestamp()
+        LOGGER.info(f'Training started {timestamp}')
+        for loop, fold_dict in TRAINING_PARAMS.items():
+            LOGGER.info(f'Training loop: {loop}')
+            ENGINE_PARAMS = {
+                "train_path": train_path,
+                "test_path": test_path,
+                "pickle_path": pickle_path,
+                "model_dir": model_dir,
+                "submission_dir": submission_dir,
+                "train_folds": fold_dict['train'],
+                "val_folds": fold_dict['val'],
+                "train_batch_size": train_batch_size,
+                "test_batch_size": test_batch_size,
+                "epochs": epochs,
+                "image_height": 137,
+                "image_width": 236,
+                "mean": (0.485, 0.456, 0.406),
+                "std": (0.229, 0.239, 0.225),
+                # 1 loop per test parquet file
+                "test_loops": 5,
+            }
+            model = MODEL_DISPATCHER.get(model_name)
+            trainer = trainers.BengaliTrainer(model=model,
+                                              model_name=model_name)
+            bengali = engines.BengaliEngine(trainer=trainer,
+                                            params=ENGINE_PARAMS)
+            bengali.run_training_engine(save_to_s3=True, creds=CREDENTIALS)
+        LOGGER.info(f'Training complete!')
     if inference:
         timestamp = utils.generate_timestamp()
         LOGGER.info(f'Inference started {timestamp}')
