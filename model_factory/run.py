@@ -11,6 +11,11 @@ from dispatcher import MODEL_DISPATCHER
 
 LOGGER = utils.get_logger(__name__)
 
+CREDENTIALS = {}
+CREDENTIALS['aws_access_key_id'] = os.environ.get("aws_access_key_id")
+CREDENTIALS['aws_secret_access_key'] = os.environ.get("aws_secret_access_key")
+CREDENTIALS['bucket'] = os.environ.get("bucket")
+
 TRAINING_PARAMS = {
     1: {
         "train": [0, 1, 2, 3],
@@ -33,7 +38,8 @@ TRAINING_PARAMS = {
 
 @click.command()
 @click.option('-m', '--model-name', type=str, default='resnet34')
-def run_bengali_engine(model_name: str) -> Optional:
+@click.option('-', '--inference', type=bool, default=False)
+def run_bengali_engine(model_name: str, inference: bool) -> Optional:
     timestamp = utils.generate_timestamp()
     LOGGER.info(f'Training started {timestamp}')
     for loop, fold_dict in TRAINING_PARAMS.items():
@@ -57,8 +63,18 @@ def run_bengali_engine(model_name: str) -> Optional:
         model = MODEL_DISPATCHER.get(model_name)
         trainer = trainers.BengaliTrainer(model=model, model_name=model_name)
         bengali = engines.BengaliEngine(trainer=trainer, params=ENGINE_PARAMS)
-        bengali.run_training_engine()
+        bengali.run_training_engine(save_to_s3=True, creds=CREDENTIALS)
     LOGGER.info(f'Training complete!')
+    if inference:
+        timestamp = utils.generate_timestamp()
+        LOGGER.info(f'Inference started {timestamp}')
+        bengali.run_inference_engine(
+            model_dir=ENGINE_PARAMS['model_dir'],
+            to_csv=True,
+            output_dir=ENGINE_PARAMS['submission_dir'],
+            load_from_s3=True,
+            creds=CREDENTIALS)
+        LOGGER.info(f'Inference complete!')
 
 
 if __name__ == "__main__":

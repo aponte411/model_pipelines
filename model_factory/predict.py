@@ -10,11 +10,19 @@ import engines
 import models
 import trainers
 import utils
+from dispatcher import MODEL_DISPATCHER
 
 LOGGER = utils.get_logger(__name__)
 
+CREDENTIALS = {}
+CREDENTIALS['aws_access_key_id'] = os.environ.get("aws_access_key_id")
+CREDENTIALS['aws_secret_access_key'] = os.environ.get("aws_secret_access_key")
+CREDENTIALS['bucket'] = os.environ.get("bucket")
 
-def main() -> Optional:
+
+@click.command()
+@click.option('-m', '--model-name', type=str, default='resnet34')
+def main(model_name: str) -> Optional:
     ENGINE_PARAMS = {
         "train_path": "inputs/train-folds.csv",
         "test_path": "inputs",
@@ -31,10 +39,15 @@ def main() -> Optional:
         "mean": (0.485, 0.456, 0.406),
         "std": (0.229, 0.239, 0.225)
     }
-    model = models.ResNet34(pretrained=True)
-    trainer = trainers.BengaliTrainer(model=model, model_name='resnet34')
+    model = MODEL_DISPATCHER.get(model_name)
+    trainer = trainers.BengaliTrainer(model=model, model_name=model_name)
     bengali = engines.BengaliEngine(trainer=trainer, params=ENGINE_PARAMS)
-    submission = bengali.run_inference_engine(model_dir='trained_models')
+    submission = bengali.run_inference_engine(
+        model_dir=ENGINE_PARAMS['model_dir'],
+        to_csv=True,
+        output_dir=ENGINE_PARAMS['submission_dir'],
+        load_from_s3=True,
+        creds=CREDENTIALS)
     LOGGER.info(submission)
 
 
