@@ -39,5 +39,5 @@ def macro_recall(preds: torch.tensor,
         f'Recalls: Grapheme {recalls[0]:.3f}, Vowel {recalls[1]:.3f}, Consonant {recalls[2]:.3f}'
     )
     LOGGER.info(
-        f'Hierarchical Macro-Averaged Recall: {macro_averaged_recall:.3f})')
+        f'Hierarchical Macro-Averaged Recall: {macro_averaged_recall:.3f}')
     return macro_averaged_recall

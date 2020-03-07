@@ -120,8 +120,8 @@ class BengaliEngine:
         val = self._get_training_loader(folds=self.params["val_folds"],
                                         name='val')
         self.model_name = f"{self.trainer.get_model_name()}_bengali"
-        model_with_val_fold = f"{self.model_name}_fold{self.params['val_folds'][0]}"
-        self.model_state_path = f"{self.params['model_dir']}/{model_with_val_fold}.pth"
+        model_with_val_fold = f"{self.model_name}_fold{self.params['val_folds'][0]}.pth"
+        self.model_state_path = f"{self.params['model_dir']}/{model_with_val_fold}"
         best_score = -1
         for epoch in range(1, self.params["epochs"] + 1):
             LOGGER.info(f'EPOCH: {epoch}')
