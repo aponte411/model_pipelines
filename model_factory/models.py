@@ -17,6 +17,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from keras.preprocessing.sequence import TimeseriesGenerator
 from keras.utils import multi_gpu_model
 from lightgbm import LGBMRegressor
+from pytorch_transformers import GPT2LMHeadModel
 from sklearn import metrics
 from sklearn.ensemble import (ExtraTreesRegressor, GradientBoostingRegressor,
                               RandomForestRegressor, StackingRegressor,
@@ -91,7 +92,7 @@ class ResNet50(nn.Module, BaseModel):
         self.linear2 = nn.Linear(512, 11)
         self.linear3 = nn.Linear(512, 7)
 
-    def forward(self, x: torch.tensor) -> Tuple:
+    def forward(self, x: torch.tensor) -> Tuple[torch.tensor]:
         batch_size = x.shape[0]
         features = self.model.features(x)
         features = F.adaptive_avg_pool2d(features, 1).reshape(batch_size, -1)
@@ -114,7 +115,7 @@ class ResNet34Lightning(pl.LightningModule):
         self.val_constructor = BengaliDataSetTrain
         self.test_constructor = BengaliDataSetTest
 
-    def forward(self, x: torch.tensor) -> Tuple:
+    def forward(self, x: torch.tensor) -> Tuple[torch.tensor]:
         batch_size, _, _, _ = x.shape
         x = self.model.features(x)
         x = F.adaptive_avg_pool2d(x, 1).reshape(batch_size, -1)
@@ -208,3 +209,9 @@ class ResNet34Lightning(pl.LightningModule):
 
     def _load_to_gpu_long(self, data):
         return data.to(self.device, dtype=torch.long)
+
+
+class GPT2(nn.Module, BaseModel):
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.model = GPT2LMHeadModel.from_pretrained('gpt2')

@@ -1,11 +1,14 @@
 from sklearn import ensemble
+
 import models
 
-MODELS = {
+MODEL_DISPATCHER = {
     "randomforest":
     ensemble.RandomForestClassifier(n_estimators=300, verbose=2, n_jobs=-1),
     "extratrees":
     ensemble.ExtraTreesClassifier(n_estimators=300, n_jobs=-1, verbose=2),
-    "resnet":
-    models.ResNet34(pretrained=True)
+    "resnet34":
+    models.ResNet34(pretrained=True),
+    "resnet50":
+    models.ResNet40(pretrained=True)
 }
