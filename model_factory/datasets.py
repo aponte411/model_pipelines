@@ -90,7 +90,8 @@ class BengaliDataSetTrain(Dataset):
 
     def __getitem__(self, item: int) -> Dict:
         def _prepare_image() -> Image:
-            image = joblib.load(f"{self.pickle_path}/{self.image_ids[item]}.p")
+            image = joblib.load(
+                f"{self.pickle_path}/{self.image_ids[item]}.pkl")
             image = image.reshape(self.image_height,
                                   self.image_width).astype(float)
             return Image.fromarray(image).convert("RGB")

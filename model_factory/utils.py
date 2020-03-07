@@ -117,7 +117,7 @@ def pickle_images(input: str, output_dir: str):
         image_ids = df.image_id.values
         image_array = df.drop('image_id', axis=1).values
         for idx, image_id in tqdm(enumerate(image_ids), total=len(image_ids)):
-            joblib.dump(image_array[idx, :], f"{output_dir}/{image_id}.p")
+            joblib.dump(image_array[idx, :], f"{output_dir}/{image_id}.pkl")
 
 
 def generate_timestamp() -> str:
