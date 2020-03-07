@@ -49,14 +49,15 @@ TRAINING_PARAMS = {
               '--pickle-path',
               type=str,
               default='inputs/pickled_images')
+@click.option('-sub', '--submission-dir', type=str, default='inputs')
 @click.option('-model', '--model-dir', type=str, default='trained_models')
 @click.option('-trainb', '--train-batch-size', type=int, default=64)
 @click.option('-testb', '--test-batch-size', type=int, default=32)
 @click.option('-ep', '--epochs', type=int, default=5)
 def run_bengali_engine(model_name: str, inference: bool, train_path: str,
-                       test_path: str, pickle_path: str, model_dir: str,
-                       train_batch_size: int, test_batch_size: int,
-                       epochs: int) -> Optional:
+                       test_path: str, pickle_path: str, submission_dir: str,
+                       model_dir: str, train_batch_size: int,
+                       test_batch_size: int, epochs: int) -> Optional:
     timestamp = utils.generate_timestamp()
     LOGGER.info(f'Training started {timestamp}')
     for loop, fold_dict in TRAINING_PARAMS.items():
@@ -66,6 +67,7 @@ def run_bengali_engine(model_name: str, inference: bool, train_path: str,
             "test_path": test_path,
             "pickle_path": pickle_path,
             "model_dir": model_dir,
+            "submission_dir": submission_dir,
             "train_folds": fold_dict['train'],
             "val_folds": fold_dict['val'],
             "train_batch_size": train_batch_size,
@@ -86,13 +88,14 @@ def run_bengali_engine(model_name: str, inference: bool, train_path: str,
     if inference:
         timestamp = utils.generate_timestamp()
         LOGGER.info(f'Inference started {timestamp}')
-        bengali.run_inference_engine(
+        submission = bengali.run_inference_engine(
             model_dir=ENGINE_PARAMS['model_dir'],
             to_csv=True,
             output_dir=ENGINE_PARAMS['submission_dir'],
             load_from_s3=True,
             creds=CREDENTIALS)
         LOGGER.info(f'Inference complete!')
+        LOGGER.info(submission)
 
 
 if __name__ == "__main__":
