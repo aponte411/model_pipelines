@@ -107,7 +107,7 @@ class SeResNext101(nn.Module, BaseModel):
         super().__init__(**kwds)
         if pretrained:
             self.model = pretrainedmodels.__dict__["se_resnext101_32x4d"](
-                pretrained='image_net')
+                pretrained="imagenet")
         else:
             self.model = pretrainedmodels.__dict__["se_resnext101_32x4d"](
                 pretrained=None)
