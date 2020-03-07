@@ -70,7 +70,7 @@ class ResNet34(nn.Module, BaseModel):
         self.linear2 = nn.Linear(512, 11)
         self.linear3 = nn.Linear(512, 7)
 
-    def forward(self, x: torch.tensor) -> Tuple:
+    def forward(self, x: torch.tensor) -> Tuple[torch.Tensor]:
         batch_size = x.shape[0]
         features = self.model.features(x)
         features = F.adaptive_avg_pool2d(features, 1).reshape(batch_size, -1)
@@ -87,12 +87,13 @@ class ResNet50(nn.Module, BaseModel):
             self.model = pretrainedmodels.__dict__["resnet50"](
                 pretrained="imagenet")
         else:
-            self.model = pretrainedmodels.__dict__["resnet50"](pretrained=None)
+            self.model = pretrainedmodels.__dict__["resnet50"](
+                pretrained=None)
         self.linear1 = nn.Linear(512, 168)
         self.linear2 = nn.Linear(512, 11)
         self.linear3 = nn.Linear(512, 7)
 
-    def forward(self, x: torch.tensor) -> Tuple[torch.tensor]:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor]:
         batch_size = x.shape[0]
         features = self.model.features(x)
         features = F.adaptive_avg_pool2d(features, 1).reshape(batch_size, -1)
@@ -101,7 +102,30 @@ class ResNet50(nn.Module, BaseModel):
         linear3 = self.linear3(features)
         return linear1, linear2, linear3
 
+    
+class SeResNext(nn.Module, BaseModel):
+    def __init__(self, pretrained: bool = True, **kwds):
+        super().__init__(**kwds)
+        if pretrained:
+            self.model = pretrainedmodels.__dict__["se_resnext101_32x4d"](
+                pretrained='image_net')
+        else:
+            self.model = pretrainedmodels.__dict__["se_resnext101_32x4d"](
+                pretrained=None)
+        self.linear1 = nn.Linear(512, 168)
+        self.linear2 = nn.Linear(512, 11)
+        self.linear3 = nn.Linear(512, 7)
 
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor]:
+        batch_size = x.shape[0]
+        features = self.model.features(x)
+        features = F.adaptive_avg_pool2d(features, 1).reshape(batch_size, -1)
+        linear1 = self.linear1(features)
+        linear2 = self.linear2(features)
+        linear3 = self.linear3(features)
+        return linear1, linear2, linear3
+        
+            
 # WIP
 class ResNet34Lightning(pl.LightningModule):
     def __init__(self, params: Dict):
@@ -115,7 +139,7 @@ class ResNet34Lightning(pl.LightningModule):
         self.val_constructor = BengaliDataSetTrain
         self.test_constructor = BengaliDataSetTest
 
-    def forward(self, x: torch.tensor) -> Tuple[torch.tensor]:
+    def forward(self, x: torch.Tensor):
         batch_size, _, _, _ = x.shape
         x = self.model.features(x)
         x = F.adaptive_avg_pool2d(x, 1).reshape(batch_size, -1)
