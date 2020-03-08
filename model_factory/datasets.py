@@ -205,15 +205,15 @@ class GoogleQADataSetTrain(Dataset):
         self.max_len = max_len
         self._create_attributes()
 
-    def _get_targets(self):
-        return cross_validators.GoogleQACrossValidator.get_targets(
-            f'{self.data_folder}/sample_submission.csv')
-
-    def _get_features(self):
-        df = pd.read_csv(f'{self.data_folder}/train-folds.csv')
-        return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
-
     def _create_attributes(self) -> None:
+        def _get_targets() -> List[str]:
+            return cross_validators.GoogleQACrossValidator.get_targets(
+                f'{self.data_folder}/sample_submission.csv')
+
+        def _get_features() -> pd.DataFrame:
+            df = pd.read_csv(f'{self.data_folder}/train-folds.csv')
+            return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
+
         test_columns = self._get_targets()
         df = self._get_features()
         self.question_title = df.question_title.values
@@ -262,14 +262,21 @@ class GoogleQADataSetTrain(Dataset):
 
 
 class GoogleQADataSetTest(Dataset):
-    def __init__(self, question_title, question_body, answer, tokenizer,
-                 max_len):
+    def __init__(self, data_folder: str, tokenizer: Any, max_len: int):
         super().__init__()
-        self.question_title = question_title
-        self.question_body = question_body
-        self.answer = answer
+        self.data_folder = data_folder
         self.tokenizer = tokenizer
         self.max_len = max_len
+        self._create_attributes()
+
+    def _create_attributes(self) -> None:
+        def _get_data() -> pd.DataFrame:
+            return pd.read_csv(f'{self.data_folder}/test.csv')
+
+        df = _get_data()
+        self.question_title = df.question_title.values
+        self.question_body = df.question_body.values
+        self.answer = df.answer.values
 
     def __len__(self):
         return len(self.answer)

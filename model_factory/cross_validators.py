@@ -120,11 +120,11 @@ class GoogleQACrossValidator(CrossValidator):
         self.target = target
 
     @staticmethod
-    def get_targets(target_path: str):
+    def get_targets(target_path: str) -> List[str]:
         df = pd.read_csv(target_path)
         return list(df.drop('qa_id', axis=1).columns)
 
-    def apply_kfold(self, save: bool = True) -> None:
+    def apply_kfold(self, save: bool = True) -> pd.DataFrame:
         train = self._load_train_for_cv(input_path=self.input_path)
         kf = model_selection.KFold(n_splits=5, shuffle=True, random_state=123)
         for fold, (train_idx, val_idx) in enumerate(
