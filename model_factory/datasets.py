@@ -181,3 +181,22 @@ class BengaliDataSetTest(Dataset):
         augmented_image = _augment_image(image=image)
         image_id = _get_image_id()
         return _return_image_dict(image=augmented_image, image_id=image_id)
+
+
+class BERTDataSetTrain(Dataset):
+    def __init__(self, question_title, question_body, answer, tokenizer,
+                 max_len):
+        super().__init__()
+        self.question_title = question_title
+        self.question_body = question_body
+        self.answer = answer
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+
+    def __len__(self):
+        return len(self.answer)
+
+    def __getitem__(self, item):
+        question_title = str(self.question_title[item])
+        question_body = str(self.question_body[item])
+        answer = str(self.answer[item])
