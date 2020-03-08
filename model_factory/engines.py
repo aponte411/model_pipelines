@@ -222,11 +222,11 @@ class BengaliEngine:
         final_predictions = defaultdict(list)
         for idx in range(1, self.params["test_loops"]):
             LOGGER.info(f'Conducting inference for fold {idx}')
-            model_name = f'{model_name}_bengali_fold{idx}.pth'
-            model_state_path = f'{model_dir}/{model_name}'
+            model_name_path = f'{model_name}_bengali_fold{idx}.pth'
+            model_state_path = f'{model_dir}/{model_name_path}'
             if load_from_s3:
                 self.trainer.load_model_from_s3(filename=model_state_path,
-                                                key=model_name,
+                                                key=model_name_path,
                                                 creds=creds)
             self.trainer.load_model_locally(model_path=model_state_path)
             self.trainer.model.to(self.trainer.device)
