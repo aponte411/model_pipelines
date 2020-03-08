@@ -60,6 +60,7 @@ def run_bengali_engine(model_name: str, train: bool, inference: bool,
                        submission_dir: str, model_dir: str,
                        train_batch_size: int, test_batch_size: int,
                        epochs: int) -> Optional:
+    # TO DO: remove duplicated instantiation of engine and engine parameters
     if train:
         timestamp = utils.generate_timestamp()
         LOGGER.info(f'Training started {timestamp}')
@@ -91,14 +92,33 @@ def run_bengali_engine(model_name: str, train: bool, inference: bool,
             bengali.run_training_engine(save_to_s3=True, creds=CREDENTIALS)
         LOGGER.info(f'Training complete!')
     if inference:
+        ENGINE_PARAMS = {
+            "train_path": train_path,
+            "test_path": test_path,
+            "pickle_path": pickle_path,
+            "model_dir": model_dir,
+            "submission_dir": submission_dir,
+            "train_folds": [0],
+            "val_folds": [4],
+            "train_batch_size": train_batch_size,
+            "test_batch_size": test_batch_size,
+            "epochs": epochs,
+            "image_height": 137,
+            "image_width": 236,
+            "mean": (0.485, 0.456, 0.406),
+            "std": (0.229, 0.239, 0.225),
+            "test_loops": 5,
+        }
         timestamp = utils.generate_timestamp()
         LOGGER.info(f'Inference started {timestamp}')
+        model = MODEL_DISPATCHER.get(model_name)
+        trainer = trainers.BengaliTrainer(model=model, model_name=model_name)
+        bengali = engines.BengaliEngine(trainer=trainer, params=ENGINE_PARAMS)
         submission = bengali.run_inference_engine(
+            model_name=model_name,
             model_dir=ENGINE_PARAMS['model_dir'],
             to_csv=True,
-            output_dir=ENGINE_PARAMS['submission_dir'],
-            load_from_s3=True,
-            creds=CREDENTIALS)
+            output_dir=ENGINE_PARAMS['submission_dir'])
         LOGGER.info(f'Inference complete!')
         LOGGER.info(submission)
 
