@@ -305,14 +305,8 @@ class GoogleQATrainer(BaseTrainer):
         return spearman_correlation(final_preds, final_targets)
 
     @staticmethod
-    def concat_tensors(tensor: torch.Tensor) -> torch.Tensor:
-        one, two, three = tensor
-        return torch.cat((one, two, three), dim=1)
-
-    @staticmethod
     def stack_tensors(tensor: torch.Tensor) -> torch.Tensor:
-        one, two, three = tensor
-        return torch.stack((one, two, three), dim=1)
+        return torch.stack(tensor, dim=1)
 
     @staticmethod
     def _loss_fn(predictions: torch.Tensor, targets: torch.Tensor) -> float:
@@ -397,7 +391,7 @@ class GoogleQATrainer(BaseTrainer):
             self.optimizer.step()
             self.scheduler.step()
             final_loss += loss
-            final_preds.append(self.concat_tensors(tensor=predictions))
+            final_preds.append(self.stack_tensors(tensor=predictions))
             final_targets.append(self.stack_tensors(tensor=targets))
 
         spearman_correlation = self.score(preds=final_preds,

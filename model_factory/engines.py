@@ -10,8 +10,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 import utils
-from datasets import BengaliDataSetTest, BengaliDataSetTrain
-from trainers import BaseTrainer, BengaliTrainer
+import datasets
+import trainers
 
 LOGGER = utils.get_logger(__name__)
 
@@ -72,12 +72,12 @@ class BengaliEngine(Engine):
             - mean {Tuple[float]}: (0.485, 0.456, 0.406),
             - std {Tuple[float]}: (0.229, 0.239, 0.225)
     """
-    def __init__(self, trainer: BaseTrainer, params: Dict, **kwds):
+    def __init__(self, trainer: trainers.BaseTrainer, params: Dict, **kwds):
         super().__init__(**kwds)
         self.trainer = trainer
-        self.training_constructor = BengaliDataSetTrain
-        self.val_constructor = BengaliDataSetTrain
-        self.test_constructor = BengaliDataSetTest
+        self.training_constructor = datasets.BengaliDataSetTrain
+        self.val_constructor = datasets.BengaliDataSetTrain
+        self.test_constructor = datasets.BengaliDataSetTest
         self.params = params
         self.model_name = None
         self.model_state_path = None
@@ -279,10 +279,33 @@ class BengaliEngine(Engine):
 
 
 class GoogleQAEngine(Engine):
-    def __init__(self, trainer: BaseTrainer, config_file: str, **kwds):
+    def __init__(self, trainer: trainers.BaseTrainer, config_file: str,
+                 **kwds):
         super().__init__(**kwds)
         self.trainer = trainer
         self.params: Dict = self._get_params(config_file)
+        self.train_contructor = datasets.GoogleQADataSetTrain
+        self.val_contructor = datasets.GoogleQADataSetTrain
+        self.test_contructor = datasets.GoogleQADataSetTest
+        self.tokenizer = transformers.BertTokenizer.from_pretrained(
+            'bert-base-uncased')
+
+    def _get_training_loader(self, folds: List[int], name: str) -> DataLoader:
+        if name == "val":
+            batch_size = self.params["test_batch_size"]
+        else:
+            batch_size = self.params["train_batch_size"]
+        constructor = getattr(self, f'{name}_constructor')
+        setattr(
+            self, f'{name}_set',
+            constructor(data_folder=self.params["train_path"],
+                        folds=folds,
+                        tokenizer=self.tokenzier,
+                        max_len=self.params['max_len'])
+        return DataLoader(dataset=getattr(self, f'{name}_set'),
+                          batch_size=batch_size,
+                          shuffle=True,
+                          num_workers=4)
 
     @staticmethod
     def _get_params(config_file: str) -> Dict:

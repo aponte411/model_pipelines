@@ -9,8 +9,8 @@ import pretrainedmodels
 import pytorch_lightning as pl
 import tensorflow as tf
 import torch
-import transformers
 import torch.nn as nn
+import transformers
 import xgboost as xgb
 from catboost import CatBoostRegressor
 from keras import Sequential, layers, metrics
@@ -249,7 +249,8 @@ class BERTBaseUncased(nn.Module):
         self.bert_drop = nn.Dropout(0.3)
         self.out = nn.Linear(768, 30)
 
-    def forward(self, ids, mask, token_type_ids):
+    def forward(self, ids: torch.Tensor, mask: torch.Tensor,
+                token_type_ids: torch.Tensor):
         o1, o2 = self.bert(ids,
                            attention_mask=mask,
                            token_type_ids=token_type_ids)

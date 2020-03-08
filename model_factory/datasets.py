@@ -13,6 +13,7 @@ from sklearn import model_selection
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
+import cross_validators
 import utils
 
 LOGGER = utils.get_logger(__name__)
@@ -184,8 +185,85 @@ class BengaliDataSetTest(Dataset):
 
 
 class GoogleQADataSetTrain(Dataset):
-    def __init__(self, question_title, question_body, answer, targets,
-                 tokenizer, max_len):
+    """
+    Requires you to download kaggle dataset using:
+        kaggle competitions download -c google-quest-challenge
+        unzip google-quest-challenge.zip
+
+    Args:
+        Dataset {[type]} -- [description]
+
+    Returns:
+        [type] -- [description]
+    """
+    def __init__(self, data_folder: str, folds: List[int], tokenizer: Any,
+                 max_len: int):
+        super().__init__()
+        self.data_folder = data_folder
+        self.folds = folds
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+        self._create_attributes()
+
+    def _get_targets(self):
+        return cross_validators.GoogleQACrossValidator.get_targets(
+            f'{self.data_folder}/sample_submission.csv')
+
+    def _get_features(self):
+        df = pd.read_csv(f'{self.data_folder}/train-folds.csv')
+        return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
+
+    def _create_attributes(self) -> None:
+        test_columns = self._get_targets()
+        df = self._get_features()
+        self.question_title = df.question_title.values
+        self.question_body = df.question_body.values
+        self.answer = df.answer.values
+        self.targets = df[test_columns].values
+
+    def __len__(self):
+        return len(self.answer)
+
+    def __getitem__(self, item):
+        def _stringify(array: np.array) -> str:
+            return str(array)
+
+        def _encode_strings(string1: str, string2: str, string3: str) -> Tuple:
+            inputs = self.tokenizer.encode_plus(string1 + string2,
+                                                string3,
+                                                add_special_tokens=True,
+                                                max_len=self.max_len)
+            ids = inputs['input_ids']
+            token_type_ids = inputs['token_type_ids']
+            mask = inputs['attention_mask']
+            return ids, token_type_ids, mask
+
+        def _add_padding(array: np.array, len: int) -> np.array:
+            return array + ([0] * len)
+
+        question_title = _stringify(array=self.question_title[item])
+        question_body = _stringify(array=self.question_body[item])
+        answer = _stringify(array=self.answer[item])
+        ids, token_type_ids, mask = _encode_strings(string1=question_title,
+                                                    string2=question_title,
+                                                    string3=answer)
+
+        padding = self.max_len - len(ids)
+        ids = _add_padding(ids, padding)
+        token_type_ids = _add_padding(token_type_ids, padding)
+        mask = _add_padding(mask, padding)
+
+        return {
+            "ids": torch.tensor(ids, dtype=torch.long),
+            "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
+            "attention_mask": torch.tensor(mask, dtype=torch.long),
+            "targets": torch.tensor(self.targets[item, :], dtype=torch.float)
+        }
+
+
+class GoogleQADataSetTest(Dataset):
+    def __init__(self, question_title, question_body, answer, tokenizer,
+                 max_len):
         super().__init__()
         self.question_title = question_title
         self.question_body = question_body
@@ -207,7 +285,7 @@ class GoogleQADataSetTrain(Dataset):
                                                 max_len=self.max_len)
             ids = inputs['input_ids']
             token_type_ids = inputs['token_type_ids']
-            mask = inputs['mask']
+            mask = inputs['attention_mask']
             return ids, token_type_ids, mask
 
         def _add_padding(array: np.array, len: int) -> np.array:
@@ -230,6 +308,5 @@ class GoogleQADataSetTrain(Dataset):
         return {
             "ids": torch.tensor(ids, dtype=torch.long),
             "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
-            "mask": torch.tensor(mask, dtype=torch.long),
-            "targets": torch.tensor(ids, dtype=torch.float)
+            "attention_mask": torch.tensor(mask, dtype=torch.long)
         }

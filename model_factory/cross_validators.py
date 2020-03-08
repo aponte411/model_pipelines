@@ -7,7 +7,6 @@ import pandas as pd
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from sklearn import model_selection
 
-from datasets import BengaliDataSetTrain
 from utils import get_logger
 
 LOGGER = get_logger(__name__)
@@ -110,11 +109,20 @@ class BengaliCrossValidator(CrossValidator):
 
 
 class GoogleQACrossValidator(CrossValidator):
-    def __init__(self, input_path: str, output_path: str, target: str, **kwds):
+    def __init__(self,
+                 input_path: str,
+                 output_path: str,
+                 target: str = None,
+                 **kwds):
         super().__init__(input_path, output_path, target, **kwds)
         self.input_path = input_path
         self.output_path = output_path
         self.target = target
+
+    @staticmethod
+    def get_targets(target_path: str):
+        df = pd.read_csv(target_path)
+        return list(df.drop('qa_id', axis=1).columns)
 
     def apply_kfold(self, save: bool = True) -> None:
         train = self._load_train_for_cv(input_path=self.input_path)
