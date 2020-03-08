@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+import transformers
 from pytorch_lightning import Trainer
 from sklearn import metrics, preprocessing
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -276,6 +277,14 @@ class BengaliLightningTrainer(Trainer):
 
 
 class GoogleQATrainer(BaseTrainer):
+    """
+    Trainer to handle training, inference, scoring, 
+    and saving/loading weights.
+
+    Args:
+        model {Any} -- trainable model.
+        model_name {str} -- name of model
+    """
     def __init__(self, model: Any, model_name: str = None, **kwds):
         super().__init__(**kwds)
         self.model = model
@@ -283,8 +292,8 @@ class GoogleQATrainer(BaseTrainer):
         self.model.cuda()
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
-        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = transformers.AdamW(self.model.parameters(), lr=1e-4)
+        self.criterion = nn.BCEWithLogitsLoss()
         self.early_stopping = EarlyStopping(patience=5, verbose=True)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer, mode="max", patience=5, factor=0.3, verbose=True)
@@ -298,8 +307,21 @@ class GoogleQATrainer(BaseTrainer):
     def _load_to_gpu_long(self, data) -> torch.Tensor:
         return data.to(self.device, dtype=torch.long)
 
+    def _loss_fn(self, predictions: torch.Tensor,
+                 targets: torch.Tensor) -> float:
+        return self.criterion(predictions, targets)
+
+    def _get_features(self, data) -> Tuple[torch.Tensor]:
+        ids = self._load_to_gpu_long(data['ids'])
+        token_type_ids = self._load_to_gpu_long(data['token_type_ids'])
+        mask = self._load_to_gpu_long(data['mask'])
+        return ids, mask, token_type_ids
+
+    def _get_targets(self, data) -> torch.Tensor:
+        return self._load_to_gpu_float(data['targets'])
+
     @staticmethod
-    def score(preds: torch.Tensor, targets: torch.Tensor) -> float:
+    def score(preds: List[torch.Tensor], targets: List[torch.Tensor]) -> float:
         final_preds = torch.cat(preds)
         final_targets = torch.cat(targets)
         return spearman_correlation(final_preds, final_targets)
@@ -307,10 +329,6 @@ class GoogleQATrainer(BaseTrainer):
     @staticmethod
     def stack_tensors(tensor: torch.Tensor) -> torch.Tensor:
         return torch.stack(tensor, dim=1)
-
-    @staticmethod
-    def _loss_fn(predictions: torch.Tensor, targets: torch.Tensor) -> float:
-        return nn.BCEWithLogitsLoss(predictions, targets)
 
     def save_model_locally(self, model_path: str) -> None:
         LOGGER.info(f'Saving model to {model_path}')
@@ -364,15 +382,6 @@ class GoogleQATrainer(BaseTrainer):
                             bucket=creds["bucket"])
         s3.download_file(filename=filename, key=key)
 
-    def _get_features(self, data) -> Tuple[torch.Tensor]:
-        ids = self._load_to_gpu_long(data['ids'])
-        token_type_ids = self._load_to_gpu_long(data['token_type_ids'])
-        mask = self._load_to_gpu_long(data['mask'])
-        return ids, mask, token_type_ids
-
-    def _get_targets(self, data) -> torch.Tensor:
-        return self._load_to_gpu_float(data['targets'])
-
     def train(self, data_loader: DataLoader) -> Tuple[float, float]:
         self.model.train()
         final_loss = 0
@@ -397,7 +406,9 @@ class GoogleQATrainer(BaseTrainer):
         spearman_correlation = self.score(preds=final_preds,
                                           targets=final_targets)
         LOGGER.info(f'Training Loss: {final_loss/counter}')
-        LOGGER.info(f'Training Spearman Correlation: {spearman_correlation}')
+        LOGGER.info(
+            f'Training Spearman Correlation Coefficient: {spearman_correlation}'
+        )
 
         return final_loss / counter, spearman_correlation
 
@@ -422,6 +433,8 @@ class GoogleQATrainer(BaseTrainer):
             spearman_correlation = self.score(preds=final_preds,
                                               targets=final_targets)
         LOGGER.info(f'Validation Loss: {final_loss/counter}')
-        LOGGER.info(f'Validation Spearman Correlation: {spearman_correlation}')
+        LOGGER.info(
+            f'Validation Spearman Correlation Coefficient: {spearman_correlation}'
+        )
 
         return final_loss / counter, spearman_correlation

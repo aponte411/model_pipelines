@@ -1,6 +1,6 @@
 import glob
 import os
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional, Sequence
 
 import albumentations
 import joblib
@@ -186,15 +186,22 @@ class BengaliDataSetTest(Dataset):
 
 class GoogleQADataSetTrain(Dataset):
     """
-    Requires you to download kaggle dataset using:
-        kaggle competitions download -c google-quest-challenge
-        unzip google-quest-challenge.zip
+    Google QuestionAnswer dataset to train and
+    validate models. Requires you to download kaggle dataset 
+    using the following command:
+        1. `kaggle competitions download -c google-quest-challenge`
+        2. `unzip google-quest-challenge.zip`
+
+    Data should have train, test, and sample_submission csv files.
 
     Args:
-        Dataset {[type]} -- [description]
+        data_folder {str} -- Path to unzipped Google Question Answer Kaggle dataset
+        folds {List[int]} -- Folds to use for training/validation.
+        tokenizer {transformers.BertTokenzier} -- Tokenizer to turn text into tokens.
+        max_len {int} -- Maximum length of a sentence.
 
     Returns:
-        [type] -- [description]
+        torch.Dataset
     """
     def __init__(self, data_folder: str, folds: List[int], tokenizer: Any,
                  max_len: int):
@@ -214,8 +221,8 @@ class GoogleQADataSetTrain(Dataset):
             df = pd.read_csv(f'{self.data_folder}/train-folds.csv')
             return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
 
-        test_columns = self._get_targets()
-        df = self._get_features()
+        test_columns = _get_targets()
+        df = _get_features()
         self.question_title = df.question_title.values
         self.question_body = df.question_body.values
         self.answer = df.answer.values
@@ -224,7 +231,7 @@ class GoogleQADataSetTrain(Dataset):
     def __len__(self):
         return len(self.answer)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> Dict:
         def _stringify(array: np.array) -> str:
             return str(array)
 
@@ -262,6 +269,22 @@ class GoogleQADataSetTrain(Dataset):
 
 
 class GoogleQADataSetTest(Dataset):
+    """
+    Google QuestionAnswer dataset to test models. Requires
+    you to download kaggle dataset using the following command:
+        1. `kaggle competitions download -c google-quest-challenge`
+        2. `unzip google-quest-challenge.zip`
+
+    Data should have train, test, and sample_submission csv files.
+
+    Args:
+        data_folder {str} -- Path to unzipped Google Question Answer Kaggle dataset
+        tokenizer {transformers.BertTokenzier} -- Tokenizer to turn text into tokens.
+        max_len {int} -- Maximum length of a sentence.
+        
+    Returns:
+        torch.Dataset
+    """
     def __init__(self, data_folder: str, tokenizer: Any, max_len: int):
         super().__init__()
         self.data_folder = data_folder
@@ -301,11 +324,9 @@ class GoogleQADataSetTest(Dataset):
         question_title = _stringify(self.question_title[item])
         question_body = _stringify(self.question_body[item])
         answer = _stringify(self.answer[item])
-        ids, token_type_ids, mask = _encode_strings(question_title +
-                                                    question_title,
-                                                    answer,
-                                                    add_special_tokens=True,
-                                                    max_len=self.max_len)
+        ids, token_type_ids, mask = _encode_strings(string1=question_title,
+                                                    string2=question_title,
+                                                    string3=answer)
 
         padding = self.max_len - len(ids)
         ids = _add_padding(ids, padding)

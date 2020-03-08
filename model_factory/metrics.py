@@ -4,14 +4,15 @@ import numpy as np
 import pandas as pd
 import sklearn.metrics as metrics
 import torch
+from scipy import stats
 
 import utils
 
 LOGGER = utils.get_logger(__name__)
 
 
-def macro_recall(preds: torch.tensor,
-                 y_true: torch.tensor,
+def macro_recall(preds: torch.Tensor,
+                 y_true: torch.Tensor,
                  n_grapheme: int = 168,
                  n_vowel: int = 11,
                  n_consonant: int = 7) -> float:
@@ -43,5 +44,14 @@ def macro_recall(preds: torch.tensor,
     return macro_averaged_recall
 
 
-def spearman_correlation():
-    pass
+def spearman_correlation(predictions: torch.Tensor,
+                         targets: torch.Tensor) -> float:
+    predictions = predictions.cpu().numpy()
+    targets = targets.cpu().numpy()
+    spearman = []
+    for idx in range(targets.shape[1]):
+        p1 = list(targets[:, idx])
+        p2 = list(predictions[:, idx])
+        coef, _ = np.nan_to_num(stats.spearmanr(p1, p2))
+        spearman.append(coef)
+    return np.mean(spearman)

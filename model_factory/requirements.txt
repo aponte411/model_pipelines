@@ -32,3 +32,5 @@ pytorch_transformers
 tensorflow
 transformers
 yapf
+pyyaml==5.2
+scipy
