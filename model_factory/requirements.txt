@@ -30,3 +30,5 @@ apache-airflow[celery,kubernetes]
 pytorch-lightning==0.6.0
 pytorch_transformers
 tensorflow
+transformers
+yapf

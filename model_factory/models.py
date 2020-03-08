@@ -9,6 +9,7 @@ import pretrainedmodels
 import pytorch_lightning as pl
 import tensorflow as tf
 import torch
+import transformers
 import torch.nn as nn
 import xgboost as xgb
 from catboost import CatBoostRegressor
@@ -238,3 +239,19 @@ class GPT2(nn.Module, BaseModel):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.model = GPT2LMHeadModel.from_pretrained('gpt2')
+
+
+class BERTBaseUncased(nn.Module):
+    def __init__(self, bert_path: str):
+        super().__init__()
+        self.bert_path = bert_path
+        self.bert = transformers.BertModel.from_pretrained(self.bert_path)
+        self.bert_drop = nn.Dropout(0.3)
+        self.out = nn.Linear(768, 30)
+
+    def forward(self, ids, mask, token_type_ids):
+        o1, o2 = self.bert(ids,
+                           attention_mask=mask,
+                           token_type_ids=token_type_ids)
+        bo = self.bert_drop(o2)
+        return self.out(bo)
