@@ -228,7 +228,7 @@ class BengaliEngine:
                 self.trainer.load_model_from_s3(filename=model_state_path,
                                                 key=model_name_path,
                                                 creds=creds)
-            self.trainer.load_model_locally(model_path=model_state_path)
+            self.trainer.load_model_locally(model_path=model_name_path)
             self.trainer.model.to(self.trainer.device)
             self.trainer.model.eval()
             predictions = _conduct_inference()
