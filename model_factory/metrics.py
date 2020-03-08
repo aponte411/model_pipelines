@@ -41,3 +41,7 @@ def macro_recall(preds: torch.tensor,
     LOGGER.info(
         f'Hierarchical Macro-Averaged Recall: {macro_averaged_recall:.3f}')
     return macro_averaged_recall
+
+
+def spearman_correlation():
+    pass

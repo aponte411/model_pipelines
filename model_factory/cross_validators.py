@@ -107,3 +107,24 @@ class BengaliCrossValidator(CrossValidator):
         if save:
             train.to_csv(self.output_path, index=False)
         return train
+
+
+class GoogleQACrossValidator(CrossValidator):
+    def __init__(self, input_path: str, output_path: str, target: str, **kwds):
+        super().__init__(input_path, output_path, target, **kwds)
+        self.input_path = input_path
+        self.output_path = output_path
+        self.target = target
+
+    def apply_kfold(self, save: bool = True) -> None:
+        train = self._load_train_for_cv(input_path=self.input_path)
+        kf = model_selection.KFold(n_splits=5, shuffle=True, random_state=123)
+        for fold, (train_idx, val_idx) in enumerate(
+                kf.split(X=train, y=train[self.target].values)):
+            LOGGER.info(f'Train index: {len(train_idx)}, Val index: {val_idx}')
+            train.loc[val_idx, 'kfold'] = fold
+
+        LOGGER.info(f'Saving train folds to disk at {self.output_path}')
+        if save:
+            train.to_csv(self.output_path, index=False)
+        return train

@@ -18,7 +18,7 @@ from tqdm import tqdm
 import dispatcher
 import models
 import utils
-from metrics import macro_recall
+from metrics import macro_recall, spearman_correlation
 from utils import EarlyStopping
 
 LOGGER = utils.get_logger(__name__)
@@ -124,7 +124,7 @@ class BengaliTrainer(BaseTrainer):
     def get_model_name(self):
         return self.model_name
 
-    def _loss_fn(self, preds, targets):
+    def _loss_fn(self, preds: torch.Tensor, targets: torch.Tensor) -> float:
         pred1, pred2, pred3 = preds
         target1, target2, target3 = targets
         loss1 = self.criterion(pred1, target1)
@@ -132,16 +132,16 @@ class BengaliTrainer(BaseTrainer):
         loss3 = self.criterion(pred3, target3)
         return (loss1 + loss2 + loss3) / 3
 
-    def _load_to_gpu_float(self, data):
+    def _load_to_gpu_float(self, data: torch.Tensor) -> torch.Tensor:
         return data.to(self.device, dtype=torch.float)
 
-    def _load_to_gpu_long(self, data):
+    def _load_to_gpu_long(self, data: torch.Tensor) -> torch.Tensor:
         return data.to(self.device, dtype=torch.long)
 
-    def _get_image(self, data):
+    def _get_image(self, data: torch.Tensor) -> torch.Tensor:
         return self._load_to_gpu_float(data["image"])
 
-    def _get_targets(self, data) -> List:
+    def _get_targets(self, data: torch.Tensor) -> List[torch.Tensor]:
         grapheme_root = self._load_to_gpu_long(data["grapheme_root"])
         vowel_diacritic = self._load_to_gpu_long(data["vowel_diacritic"])
         consonant_diacritic = self._load_to_gpu_long(
@@ -149,26 +149,26 @@ class BengaliTrainer(BaseTrainer):
         return [grapheme_root, vowel_diacritic, consonant_diacritic]
 
     @staticmethod
-    def score(preds, targets) -> float:
+    def score(preds: torch.Tensor, targets: torch.Tensor) -> float:
         final_preds = torch.cat(preds)
         final_targets = torch.cat(targets)
         return macro_recall(final_preds, final_targets)
 
     @staticmethod
-    def concat_tensors(tensor) -> torch.tensor:
+    def concat_tensors(tensor: torch.Tensor) -> torch.Tensor:
         one, two, three = tensor
         return torch.cat((one, two, three), dim=1)
 
     @staticmethod
-    def stack_tensors(tensor) -> torch.tensor:
+    def stack_tensors(tensor: torch.Tensor) -> torch.Tensor:
         one, two, three = tensor
         return torch.stack((one, two, three), dim=1)
 
-    def save_model_locally(self, model_path: str):
+    def save_model_locally(self, model_path: str) -> None:
         LOGGER.info(f'Saving model to {model_path}')
         torch.save(self.model.state_dict(), model_path)
 
-    def save_model_to_s3(self, filename: str, key: str, creds: Dict):
+    def save_model_to_s3(self, filename: str, key: str, creds: Dict) -> None:
         """
         Saves trained model to s3 bucket. Requires credentials
         dictionary. E.g.
@@ -190,11 +190,11 @@ class BengaliTrainer(BaseTrainer):
                             bucket=creds["bucket"])
         s3.upload_file(filename=filename, key=key)
 
-    def load_model_locally(self, model_path: str):
+    def load_model_locally(self, model_path: str) -> None:
         LOGGER.info(f'Loading model from {model_path}')
         self.model.load_state_dict(torch.load(model_path))
 
-    def load_model_from_s3(self, filename: str, key: str, creds: Dict):
+    def load_model_from_s3(self, filename: str, key: str, creds: Dict) -> None:
         """
         Loads trained model from s3 bucket. Requires credentials
         dictionary. E.g.
@@ -273,3 +273,161 @@ class BengaliLightningTrainer(Trainer):
 
     def train_model(self, model: Any):
         self.fit(model)
+
+
+class GoogleQATrainer(BaseTrainer):
+    def __init__(self, model: Any, model_name: str = None, **kwds):
+        super().__init__(**kwds)
+        self.model = model
+        self.model_name = model_name
+        self.model.cuda()
+        self.device = torch.device(
+            'cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
+        self.criterion = nn.CrossEntropyLoss()
+        self.early_stopping = EarlyStopping(patience=5, verbose=True)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer, mode="max", patience=5, factor=0.3, verbose=True)
+
+    def get_model_name(self) -> str:
+        return self.model_name
+
+    def _load_to_gpu_float(self, data) -> torch.Tensor:
+        return data.to(self.device, dtype=torch.float)
+
+    def _load_to_gpu_long(self, data) -> torch.Tensor:
+        return data.to(self.device, dtype=torch.long)
+
+    @staticmethod
+    def score(preds: torch.Tensor, targets: torch.Tensor) -> float:
+        final_preds = torch.cat(preds)
+        final_targets = torch.cat(targets)
+        return spearman_correlation(final_preds, final_targets)
+
+    @staticmethod
+    def concat_tensors(tensor: torch.Tensor) -> torch.Tensor:
+        one, two, three = tensor
+        return torch.cat((one, two, three), dim=1)
+
+    @staticmethod
+    def stack_tensors(tensor: torch.Tensor) -> torch.Tensor:
+        one, two, three = tensor
+        return torch.stack((one, two, three), dim=1)
+
+    @staticmethod
+    def _loss_fn(predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        return nn.BCEWithLogitsLoss(predictions, targets)
+
+    def save_model_locally(self, model_path: str) -> None:
+        LOGGER.info(f'Saving model to {model_path}')
+        torch.save(self.model.state_dict(), model_path)
+
+    def save_model_to_s3(self, filename: str, key: str, creds: Dict) -> None:
+        """
+        Saves trained model to s3 bucket. Requires credentials
+        dictionary. E.g.
+
+            CREDENTIALS = {}
+            CREDENTIALS['aws_access_key_id'] = os.environ.get("aws_access_key_id")
+            CREDENTIALS['aws_secret_access_key'] = os.environ.get("aws_secret_access_key")
+            CREDENTIALS['bucket'] = os.environ.get("bucket")
+
+        Args:
+            filename {str} -- Path to model directory
+            key {str} -- Object name
+            creds {Dict} -- Credentials dictionary containing AWS aws_access_key_id,
+            aws_secret_access_key, and bucket.
+        """
+        LOGGER.info(f'Saving model to s3 bucket..')
+        s3 = utils.S3Client(user=creds["aws_access_key_id"],
+                            password=creds["aws_secret_access_key"],
+                            bucket=creds["bucket"])
+        s3.upload_file(filename=filename, key=key)
+
+    def load_model_locally(self, model_path: str) -> None:
+        LOGGER.info(f'Loading model from {model_path}')
+        self.model.load_state_dict(torch.load(model_path))
+
+    def load_model_from_s3(self, filename: str, key: str, creds: Dict) -> None:
+        """
+        Loads trained model from s3 bucket. Requires credentials
+        dictionary. E.g.
+
+            CREDENTIALS = {}
+            CREDENTIALS['aws_access_key_id'] = os.environ.get("aws_access_key_id")
+            CREDENTIALS['aws_secret_access_key'] = os.environ.get("aws_secret_access_key")
+            CREDENTIALS['bucket'] = os.environ.get("bucket")
+
+        Args:
+            filename {str} -- Path to model directory
+            key {str} -- Object name
+            creds {Dict} -- Credentials dictionary containing AWS aws_access_key_id,
+            aws_secret_access_key, and bucket.
+        """
+        LOGGER.info(f'Loading model from s3 bucket..')
+        s3 = utils.S3Client(user=creds["aws_access_key_id"],
+                            password=creds["aws_secret_access_key"],
+                            bucket=creds["bucket"])
+        s3.download_file(filename=filename, key=key)
+
+    def _get_features(self, data) -> Tuple[torch.Tensor]:
+        ids = self._load_to_gpu_long(data['ids'])
+        token_type_ids = self._load_to_gpu_long(data['token_type_ids'])
+        mask = self._load_to_gpu_long(data['mask'])
+        return ids, mask, token_type_ids
+
+    def _get_targets(self, data) -> torch.Tensor:
+        return self._load_to_gpu_float(data['targets'])
+
+    def train(self, data_loader: DataLoader) -> Tuple[float, float]:
+        self.model.train()
+        final_loss = 0
+        counter = 0
+        final_preds, final_targets = [], []
+        for batch, data in tqdm(enumerate(data_loader)):
+            counter += 1
+            ids, mask, token_type_ids = self._get_features(data=data)
+            targets = self._get_targets(data=data)
+            self.optimizer.zero_grad()
+            predictions = self.model(ids=ids,
+                                     mask=mask,
+                                     token_type_ids=token_type_ids)
+            loss = self._loss_fn(preds=predictions, targets=targets)
+            loss.backward()
+            self.optimizer.step()
+            self.scheduler.step()
+            final_loss += loss
+            final_preds.append(self.concat_tensors(tensor=predictions))
+            final_targets.append(self.stack_tensors(tensor=targets))
+
+        spearman_correlation = self.score(preds=final_preds,
+                                          targets=final_targets)
+        LOGGER.info(f'Training Loss: {final_loss/counter}')
+        LOGGER.info(f'Training Spearman Correlation: {spearman_correlation}')
+
+        return final_loss / counter, spearman_correlation
+
+    def evaluate(self, data_loader: DataLoader) -> Tuple[float, float]:
+        with torch.no_grad():
+            self.model.eval()
+            final_loss = 0
+            counter = 0
+            final_preds, final_targets = [], []
+            for batch, data in tqdm(enumerate(data_loader)):
+                counter += 1
+                ids, mask, token_type_ids = self._get_features(data=data)
+                targets = self._get_targets(data=data)
+                predictions = self.model(ids=ids,
+                                         mask=mask,
+                                         token_type_ids=token_type_ids)
+                loss = self._loss_fn(preds=predictions, targets=targets)
+                final_loss += self._loss_fn(preds=predictions, targets=targets)
+                final_preds.append(self.concat_tensors(tensor=predictions))
+                final_targets.append(self.stack_tensors(tensor=targets))
+
+            spearman_correlation = self.score(preds=final_preds,
+                                              targets=final_targets)
+        LOGGER.info(f'Validation Loss: {final_loss/counter}')
+        LOGGER.info(f'Validation Spearman Correlation: {spearman_correlation}')
+
+        return final_loss / counter, spearman_correlation

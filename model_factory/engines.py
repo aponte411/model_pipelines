@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
+from abc import abstractmethod
 import click
 import numpy as np
 import pandas as pd
@@ -15,8 +16,36 @@ from trainers import BaseTrainer, BengaliTrainer
 LOGGER = utils.get_logger(__name__)
 
 
+class Engine:
+    """
+    The Engine will combine trainers, datasets, and models
+    into a single object that contains functionality to train models
+    and conduct inference.
+
+    Args:
+        trainer {Trainer} - Trainer object that handles training and
+        serialization.
+        params {Dict} - Parameter dictionary containing engine arguments
+        such as the number of epochs, paths to data, and preprocessing
+        parameters
+    """
+    def __init__(self, trainer: BaseTrainer, **kwds):
+        super().__init__(**kwds)
+        self.trainer = trainer
+        self.model_name = None
+        self.model_state_path = None
+
+    @abstractmethod
+    def run_training_engine(self):
+        pass
+
+    @abstractmethod
+    def run_inference_engine(self):
+        pass
+
+
 # requires CUDA to be enabled for OSX
-class BengaliEngine:
+class BengaliEngine(Engine):
     """
     The BengaliEngine will combine trainers, datasets, and models
     into a single object that contains functionality to train models
@@ -247,3 +276,21 @@ class BengaliEngine:
             submission_df.to_csv(output_path, index=False)
 
         return submission_df
+
+
+class GoogleQAEngine(Engine):
+    def __init__(self, trainer: BaseTrainer, config_file: str, **kwds):
+        super().__init__(**kwds)
+        self.trainer = trainer
+        self.params: Dict = self._get_params(config_file)
+
+    @staticmethod
+    def _get_params(config_file: str) -> Dict:
+        with open(config_file, 'rb') as f:
+            return yaml.load(f)
+
+    def run_training_engine(self):
+        pass
+
+    def run_inference_engine(self):
+        pass

@@ -183,9 +183,9 @@ class BengaliDataSetTest(Dataset):
         return _return_image_dict(image=augmented_image, image_id=image_id)
 
 
-class BERTDataSetTrain(Dataset):
-    def __init__(self, question_title, question_body, answer, tokenizer,
-                 max_len):
+class GoogleQADataSetTrain(Dataset):
+    def __init__(self, question_title, question_body, answer, targets,
+                 tokenizer, max_len):
         super().__init__()
         self.question_title = question_title
         self.question_body = question_body
@@ -197,6 +197,39 @@ class BERTDataSetTrain(Dataset):
         return len(self.answer)
 
     def __getitem__(self, item):
-        question_title = str(self.question_title[item])
-        question_body = str(self.question_body[item])
-        answer = str(self.answer[item])
+        def _stringify(array: np.array) -> str:
+            return str(array)
+
+        def _encode_strings(string1: str, string2: str, string3: str) -> Tuple:
+            inputs = self.tokenizer.encode_plus(string1 + string2,
+                                                string3,
+                                                add_special_tokens=True,
+                                                max_len=self.max_len)
+            ids = inputs['input_ids']
+            token_type_ids = inputs['token_type_ids']
+            mask = inputs['mask']
+            return ids, token_type_ids, mask
+
+        def _add_padding(array: np.array, len: int) -> np.array:
+            return array + ([0] * len)
+
+        question_title = _stringify(self.question_title[item])
+        question_body = _stringify(self.question_body[item])
+        answer = _stringify(self.answer[item])
+        ids, token_type_ids, mask = _encode_strings(question_title +
+                                                    question_title,
+                                                    answer,
+                                                    add_special_tokens=True,
+                                                    max_len=self.max_len)
+
+        padding = self.max_len - len(ids)
+        ids = _add_padding(ids, padding)
+        token_type_ids = _add_padding(token_type_ids, padding)
+        mask = _add_padding(mask, padding)
+
+        return {
+            "ids": torch.tensor(ids, dtype=torch.long),
+            "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
+            "mask": torch.tensor(mask, dtype=torch.long),
+            "targets": torch.tensor(ids, dtype=torch.float)
+        }
