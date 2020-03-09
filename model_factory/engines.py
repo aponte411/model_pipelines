@@ -288,7 +288,7 @@ class GoogleQAEngine(Engine):
         self.val_contructor = datasets.GoogleQADataSetTrain
         self.test_contructor = datasets.GoogleQADataSetTest
         self.tokenizer = transformers.BertTokenizer.from_pretrained(
-            'bert-base-uncased')
+            'bert-base-uncased', do_lower_case=True)
 
     def _get_training_loader(self, folds: List[int], name: str) -> DataLoader:
         if name == "val":

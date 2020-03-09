@@ -232,12 +232,13 @@ class GoogleQADataSetTrain(Dataset):
         return len(self.answer)
 
     def __getitem__(self, item: int) -> Dict:
-        def _stringify(array: np.array) -> str:
-            return str(array)
+        def _preprocess(array: np.array) -> str:
+            string = str(array)
+            return " ".join(string.split())
 
-        def _encode_strings(string1: str, string2: str, string3: str) -> Tuple:
-            inputs = self.tokenizer.encode_plus(string1 + string2,
-                                                string3,
+        def _encode_strings(title: str, body: str, answer: str) -> Tuple:
+            inputs = self.tokenizer.encode_plus(title + " " + body,
+                                                answer,
                                                 add_special_tokens=True,
                                                 max_len=self.max_len)
             ids = inputs['input_ids']
@@ -248,12 +249,12 @@ class GoogleQADataSetTrain(Dataset):
         def _add_padding(array: np.array, len: int) -> np.array:
             return array + ([0] * len)
 
-        question_title = _stringify(array=self.question_title[item])
-        question_body = _stringify(array=self.question_body[item])
-        answer = _stringify(array=self.answer[item])
-        ids, token_type_ids, mask = _encode_strings(string1=question_title,
-                                                    string2=question_title,
-                                                    string3=answer)
+        question_title = _preprocess(array=self.question_title[item])
+        question_body = _preprocess(array=self.question_body[item])
+        answer = _preprocess(array=self.answer[item])
+        ids, token_type_ids, mask = _encode_strings(title=question_title,
+                                                    body=question_body,
+                                                    answer=answer)
 
         padding = self.max_len - len(ids)
         ids = _add_padding(ids, padding)
@@ -305,12 +306,13 @@ class GoogleQADataSetTest(Dataset):
         return len(self.answer)
 
     def __getitem__(self, item):
-        def _stringify(array: np.array) -> str:
-            return str(array)
+        def _preprocess(array: np.array) -> str:
+            string = str(array)
+            return " ".join(string.split())
 
-        def _encode_strings(string1: str, string2: str, string3: str) -> Tuple:
-            inputs = self.tokenizer.encode_plus(string1 + string2,
-                                                string3,
+        def _encode_strings(title: str, body: str, answer: str) -> Tuple:
+            inputs = self.tokenizer.encode_plus(title + " " + body,
+                                                answer,
                                                 add_special_tokens=True,
                                                 max_len=self.max_len)
             ids = inputs['input_ids']
@@ -321,12 +323,12 @@ class GoogleQADataSetTest(Dataset):
         def _add_padding(array: np.array, len: int) -> np.array:
             return array + ([0] * len)
 
-        question_title = _stringify(self.question_title[item])
-        question_body = _stringify(self.question_body[item])
-        answer = _stringify(self.answer[item])
-        ids, token_type_ids, mask = _encode_strings(string1=question_title,
-                                                    string2=question_title,
-                                                    string3=answer)
+        question_title = _preprocess(array=self.question_title[item])
+        question_body = _preprocess(array=self.question_body[item])
+        answer = _preprocess(array=self.answer[item])
+        ids, token_type_ids, mask = _encode_strings(title=question_title,
+                                                    body=question_body,
+                                                    answer=answer)
 
         padding = self.max_len - len(ids)
         ids = _add_padding(ids, padding)
