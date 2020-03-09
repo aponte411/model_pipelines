@@ -289,7 +289,7 @@ class GoogleQATrainer(BaseTrainer):
     def _get_features(self, data) -> Tuple[torch.Tensor]:
         ids = self._load_to_gpu_long(data['ids'])
         token_type_ids = self._load_to_gpu_long(data['token_type_ids'])
-        mask = self._load_to_gpu_long(data['mask'])
+        mask = self._load_to_gpu_long(data['attention_mask'])
         return ids, mask, token_type_ids
 
     def _get_targets(self, data) -> torch.Tensor:
