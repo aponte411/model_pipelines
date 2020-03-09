@@ -27,7 +27,8 @@ class CrossValidator(ABC):
             4: [0, 1, 2, 3],
         }
 
-    def _load_train_for_cv(self, input_path: str) -> pd.DataFrame:
+    @staticmethod
+    def load_train_for_cv(input_path: str) -> pd.DataFrame:
         train = pd.read_csv(input_path)
         train['kfold'] = -1
         return train
@@ -66,7 +67,7 @@ class QuoraCrossValidator(CrossValidator):
         super().__init__(input_path, output_path, target, **kwds)
 
     def apply_stratified_kfold(self) -> None:
-        train = self._load_train_for_cv(input_path=self.input_path)
+        train = self.load_train_for_cv(input_path=self.input_path)
         kf = model_selection.StratifiedKFold(n_splits=5,
                                              shuffle=True,
                                              random_state=123)
@@ -90,7 +91,7 @@ class BengaliCrossValidator(CrossValidator):
         return X, y
 
     def apply_multilabel_stratified_kfold(self, save: bool = True) -> None:
-        train = self._load_train_for_cv(input_path=self.input_path)
+        train = self.load_train_for_cv(input_path=self.input_path)
         X, y = self._split_data(train=train)
         mskf = MultilabelStratifiedKFold(n_splits=5)
         for fold, (train_idx, val_idx) in enumerate(mskf.split(X, y)):
@@ -113,7 +114,7 @@ class GoogleQACrossValidator(CrossValidator):
         return list(df.drop('qa_id', axis=1).columns)
 
     def apply_kfold(self, save: bool = True) -> pd.DataFrame:
-        train = self._load_train_for_cv(input_path=self.input_path)
+        train = self.load_train_for_cv(input_path=self.input_path)
         kf = model_selection.KFold(n_splits=5, shuffle=True, random_state=123)
         for fold, (train_idx, val_idx) in enumerate(
                 kf.split(X=train, y=train[self.target].values)):
@@ -135,7 +136,7 @@ class IMDBCrossValidator(CrossValidator):
         super().__init__(input_path, output_path, target, **kwds)
 
     def apply_kfold(self, save: bool = True) -> pd.DataFrame:
-        train = self._load_train_for_cv(input_path=self.input_path)
+        train = self.load_train_for_cv(input_path=self.input_path)
         kf = model_selection.KFold(n_splits=5, shuffle=True, random_state=123)
         for fold, (train_idx, val_idx) in enumerate(
                 kf.split(X=train, y=train[self.target].values)):
