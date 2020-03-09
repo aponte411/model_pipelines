@@ -48,10 +48,11 @@ class BengaliDataSetTrain(Dataset):
         self.mean = mean
         self.std = std
         self.pickle_path = pickle_path
-        self._create_attributes()
-        self._create_augmentations()
+        self.create_attributes
+        self.create_augmentations
 
-    def _create_attributes(self) -> None:
+    @property
+    def create_attributes(self) -> None:
         def _load_df() -> pd.DataFrame:
             df = pd.read_csv(self.train_path)
             df = df.drop('grapheme', axis=1)
@@ -63,7 +64,8 @@ class BengaliDataSetTrain(Dataset):
         self.vowel_diacritic = df.vowel_diacritic.values
         self.consonant_diacritic = df.consonant_diacritic.values
 
-    def _create_augmentations(self) -> None:
+    @property
+    def create_augmentations(self) -> None:
         if len(self.folds) > 1:
             self.aug = albumentations.Compose([
                 albumentations.Resize(self.image_height,
@@ -142,14 +144,16 @@ class BengaliDataSetTest(Dataset):
         self.image_width = image_width
         self.mean = mean
         self.std = std
-        self._create_attributes()
-        self._create_augmentations()
+        self.create_attributes
+        self.create_augmentations
 
-    def _create_attributes(self) -> None:
+    @property
+    def create_attributes(self) -> None:
         self.image_id = self.df.image_id.values
         self.image_arr = self.df.iloc[:, 1:].values
 
-    def _create_augmentations(self) -> None:
+    @property
+    def create_augmentations(self) -> None:
         self.aug = albumentations.Compose([
             albumentations.Resize(self.image_height,
                                   self.image_width,
@@ -212,9 +216,10 @@ class GoogleQADataSetTrain(Dataset):
         self.folds = folds
         self.tokenizer = tokenizer
         self.max_len = max_len
-        self._create_attributes()
+        self.create_attributes
 
-    def _create_attributes(self) -> None:
+    @property
+    def create_attributes(self) -> None:
         def _get_targets() -> List[str]:
             return cross_validators.GoogleQACrossValidator.get_targets(
                 f'{self.data_folder}/sample_submission.csv')
@@ -293,9 +298,10 @@ class GoogleQADataSetTest(Dataset):
         self.data_folder = data_folder
         self.tokenizer = tokenizer
         self.max_len = max_len
-        self._create_attributes()
+        self.create_attributes
 
-    def _create_attributes(self) -> None:
+    @property
+    def create_attributes(self) -> None:
         def _get_data() -> pd.DataFrame:
             return pd.read_csv(f'{self.data_folder}/test.csv')
 
@@ -370,9 +376,10 @@ class IMDBDataSet(Dataset):
         self.folds = folds
         self.tokenizer = tokenizer
         self.max_len = max_len
-        self._create_attributes()
+        self.create_attributes
 
-    def _create_attributes(self) -> None:
+    @property
+    def create_attributes(self) -> None:
         def _get_data() -> pd.DataFrame:
             df = pd.read_csv(f'{self.data_folder}/train-folds.csv')
             return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
