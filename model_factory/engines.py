@@ -31,7 +31,7 @@ class Engine(ABC):
         such as the number of epochs, paths to data, and preprocessing
         parameters
     """
-    def __init__(self, trainer: BaseTrainer, **kwds):
+    def __init__(self, trainer: trainers.BaseTrainer, **kwds):
         super().__init__(**kwds)
         self.trainer = trainer
 
@@ -75,8 +75,7 @@ class BengaliEngine(Engine):
             - std {Tuple[float]}: (0.229, 0.239, 0.225)
     """
     def __init__(self, trainer: trainers.BaseTrainer, params: Dict, **kwds):
-        super().__init__(**kwds)
-        self.trainer = trainer
+        super().__init__(trainer, **kwds)
         self.training_constructor = datasets.BengaliDataSetTrain
         self.val_constructor = datasets.BengaliDataSetTrain
         self.test_constructor = datasets.BengaliDataSetTest
@@ -283,8 +282,7 @@ class BengaliEngine(Engine):
 class GoogleQAEngine(Engine):
     def __init__(self, trainer: trainers.BaseTrainer, config_file: str,
                  **kwds):
-        super().__init__(**kwds)
-        self.trainer = trainer
+        super().__init__(trainer, **kwds)
         self.params: Dict = self.get_params(config_file)
         self.train_contructor = datasets.GoogleQADataSetTrain
         self.val_contructor = datasets.GoogleQADataSetTrain

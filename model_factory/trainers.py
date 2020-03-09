@@ -16,7 +16,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import dispatcher
+from dispatcher import MODEL_DISPATCHER
 import models
 import utils
 from metrics import macro_recall, spearman_correlation
@@ -40,9 +40,6 @@ class BaseTrainer(ABC):
         """Login to train models"""
         raise NotImplementedError()
 
-    def get_model_path(self):
-        return self.model_path
-
     def get_model(self):
         return self.model
 
@@ -50,15 +47,14 @@ class BaseTrainer(ABC):
 class QuoraTrainer(BaseTrainer):
     def __init__(self, model: Any, **kwds):
         super().__init__(model, **kwds)
-        self.model = model
 
     def load_model_locally(self, key: str):
         LOGGER.info(f"Using saved model for {self.tournament}")
-        self.model = dispatcher.MODELS['randomforest']
+        self.model = MODEL_DISPATCHER['randomforest']
         self.model.load(key)
 
     def load_from_s3(self, filename: str, key: str):
-        self.model = dispatcher.MODELS['randomforest']
+        self.model = MODEL_DISPATCHER['randomforest']
         self.model.load_from_s3(filename=filename, key=key)
         self.model = self.model.load(key)
         LOGGER.info(
@@ -92,9 +88,7 @@ class QuoraTrainer(BaseTrainer):
 class BengaliTrainer(BaseTrainer):
     def __init__(self, model: Any, model_name: str = None, **kwds):
         super().__init__(model, **kwds)
-        self.model = model
         self.model_name = model_name
-        self.model.cuda()
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
@@ -199,6 +193,7 @@ class BengaliTrainer(BaseTrainer):
         s3.download_file(filename=filename, key=key)
 
     def train(self, data_loader: DataLoader) -> Tuple[float, float]:
+        self.model.to(self.device)
         self.model.train()
         final_loss = 0
         counter = 0
@@ -225,6 +220,7 @@ class BengaliTrainer(BaseTrainer):
 
     def evaluate(self, data_loader: DataLoader) -> Tuple[float, float]:
         with torch.no_grad():
+            self.model.to(self.device)
             self.model.eval()
             final_loss = 0
             counter = 0
@@ -267,10 +263,8 @@ class GoogleQATrainer(BaseTrainer):
         model_name {str} -- name of model
     """
     def __init__(self, model: Any, model_name: str = None, **kwds):
-        super().__init__(**kwds)
-        self.model = model
+        super().__init__(model, **kwds)
         self.model_name = model_name
-        self.model.cuda()
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
         self.optimizer = transformers.AdamW(self.model.parameters(), lr=1e-4)
@@ -364,6 +358,7 @@ class GoogleQATrainer(BaseTrainer):
         s3.download_file(filename=filename, key=key)
 
     def train(self, data_loader: DataLoader) -> Tuple[float, float]:
+        self.model.to(self.device)
         self.model.train()
         final_loss = 0
         counter = 0
@@ -395,6 +390,7 @@ class GoogleQATrainer(BaseTrainer):
 
     def evaluate(self, data_loader: DataLoader) -> Tuple[float, float]:
         with torch.no_grad():
+            self.model.to(self.device)
             self.model.eval()
             final_loss = 0
             counter = 0

@@ -64,9 +64,6 @@ class CrossValidator(ABC):
 class QuoraCrossValidator(CrossValidator):
     def __init__(self, input_path: str, output_path: str, target: str, **kwds):
         super().__init__(input_path, output_path, target, **kwds)
-        self.input_path = input_path
-        self.output_path = output_path
-        self.target = target
 
     def apply_stratified_kfold(self) -> None:
         train = self._load_train_for_cv(input_path=self.input_path)
@@ -85,9 +82,6 @@ class QuoraCrossValidator(CrossValidator):
 class BengaliCrossValidator(CrossValidator):
     def __init__(self, input_path: str, output_path: str, target: str, **kwds):
         super().__init__(input_path, output_path, target, **kwds)
-        self.input_path = input_path
-        self.output_path = output_path
-        self.target = target
 
     def _split_data(self,
                     train: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -110,15 +104,8 @@ class BengaliCrossValidator(CrossValidator):
 
 
 class GoogleQACrossValidator(CrossValidator):
-    def __init__(self,
-                 input_path: str,
-                 output_path: str,
-                 target: str = None,
-                 **kwds):
+    def __init__(self, input_path: str, output_path: str, target: str, **kwds):
         super().__init__(input_path, output_path, target, **kwds)
-        self.input_path = input_path
-        self.output_path = output_path
-        self.target = target
 
     @staticmethod
     def get_targets(target_path: str) -> List[str]:
@@ -146,9 +133,6 @@ class IMDBCrossValidator(CrossValidator):
                  target: str = None,
                  **kwds):
         super().__init__(input_path, output_path, target, **kwds)
-        self.input_path = input_path
-        self.output_path = output_path
-        self.target = target
 
     def apply_kfold(self, save: bool = True) -> pd.DataFrame:
         train = self._load_train_for_cv(input_path=self.input_path)
