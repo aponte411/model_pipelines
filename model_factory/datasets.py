@@ -40,6 +40,7 @@ class BengaliDataSetTrain(Dataset):
                  image_width: int = None,
                  mean: Tuple[float] = None,
                  std: Tuple[float] = None):
+        super().__init__()
         self.train_path = train_path
         self.folds = folds
         self.image_height = image_height
@@ -135,6 +136,7 @@ class BengaliDataSetTest(Dataset):
                  image_width: int = None,
                  mean: float = None,
                  std: float = None):
+        super().__init__()
         self.df = df
         self.image_height = image_height
         self.image_width = image_width
