@@ -282,7 +282,7 @@ class GoogleQADataSetTest(Dataset):
         data_folder {str} -- Path to unzipped Google Question Answer Kaggle dataset
         tokenizer {transformers.BertTokenzier} -- Tokenizer to turn text into tokens.
         max_len {int} -- Maximum length of a sentence.
-        
+
     Returns:
         torch.Dataset
     """
@@ -339,4 +339,79 @@ class GoogleQADataSetTest(Dataset):
             "ids": torch.tensor(ids, dtype=torch.long),
             "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
             "attention_mask": torch.tensor(mask, dtype=torch.long)
+        }
+
+
+class IMDBDataSet(Dataset):
+    """
+    IMDB movie review dataset to train and
+    validate models. Download using:
+        `kaggle datasets download lakshmi25npathi/imdb-dataset-of-50k-movie-reviews`
+
+    Data downloaded should be "IMDB Dataset.csv". You then must apply cross-validation
+    using the assosciated CrossValidator object - e.g. IMDBCrossValidator.
+    Data is then expected to named "train-folds.csv" after applying cross-validation.
+
+    Args:
+        data_folder {str} -- Path to unzipped IMDB Kaggle dataset
+        folds {List[int]} -- Folds to use for training/validation.
+        tokenizer {transformers.BertTokenzier} -- Tokenizer to turn text into tokens.
+        max_len {int} -- Maximum length of a sentence.
+
+    Returns:
+        torch.Dataset
+    """
+    def __init__(self, data_folder: str, folds: List[int], tokenizer: Any,
+                 max_len: int):
+        super().__init__()
+        self.data_folder = data_folder
+        self.folds = folds
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+        self._create_attributes()
+
+    def _create_attributes(self) -> None:
+        def _get_data() -> pd.DataFrame:
+            df = pd.read_csv(f'{self.data_folder}/train-folds.csv')
+            return df.loc[df.kfold.isin(self.folds)].reset_index(drop=True)
+
+        df = _get_data()
+        self.review = df.review.values
+        self.targets = df.sentiment.values
+
+    def __len__(self):
+        return len(self.answer)
+
+    def __getitem__(self, item: int) -> Dict:
+        def _preprocess(array: np.array) -> str:
+            string = str(array)
+            return " ".join(string.split())
+
+        def _encode_strings(review: str) -> Tuple:
+            inputs = self.tokenizer.encode_plus(review,
+                                                None,
+                                                add_special_tokens=True,
+                                                max_len=self.max_len)
+            ids = inputs['input_ids']
+            token_type_ids = inputs['token_type_ids']
+            mask = inputs['attention_mask']
+            return ids, token_type_ids, mask
+
+        def _add_padding(array: np.array, len: int) -> np.array:
+            return array + ([0] * len)
+
+        review = _preprocess(array=self.review[item])
+        sentiment = _preprocess(array=self.sentiment[item])
+        ids, token_type_ids, mask = _encode_strings(review=review)
+
+        padding = self.max_len - len(ids)
+        ids = _add_padding(ids, padding)
+        token_type_ids = _add_padding(token_type_ids, padding)
+        mask = _add_padding(mask, padding)
+
+        return {
+            "ids": torch.tensor(ids, dtype=torch.long),
+            "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
+            "attention_mask": torch.tensor(mask, dtype=torch.long),
+            "target": torch.tensor(sentiment, dtype=torch.float)
         }
