@@ -13,6 +13,6 @@ MODEL_DISPATCHER = {
     models.ResNet50(pretrained=True),
     "seresnext101":
     models.SeResNext101(pretrained=True),
-    'bert':
-    models.BERTBaseUncased(bert_path='bert-base-uncased')
+    'bert-googleqa':
+    models.BERTBaseUncased(bert_path='bert-base-uncased', n_outputs=30)
 }
