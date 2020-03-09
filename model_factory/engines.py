@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
@@ -18,7 +18,7 @@ import utils
 LOGGER = utils.get_logger(__name__)
 
 
-class Engine:
+class Engine(ABC):
     """
     The Engine will combine trainers, datasets, and models
     into a single object that contains functionality to train models
@@ -37,11 +37,13 @@ class Engine:
 
     @abstractmethod
     def run_training_engine(self):
-        pass
+        """Wraps logic to train and evaluate"""
+        raise NotImplementedError()
 
     @abstractmethod
     def run_inference_engine(self):
-        pass
+        """Wraps logic to conduct inference"""
+        raise NotImplementedError()
 
 
 # requires CUDA to be enabled for OSX

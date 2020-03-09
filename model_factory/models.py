@@ -1,4 +1,5 @@
 import os
+from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
@@ -36,27 +37,30 @@ from metrics import macro_recall
 LOGGER = utils.get_logger(__name__)
 
 
-class BaseModel:
+class BaseModel(ABC):
     def __init__(self, **kwds):
         super().__init__(**kwds)
 
-    def save_to_s3(self, filename: str, key: str) -> None:
+    @staticmethod
+    def save_to_s3(filename: str, key: str) -> None:
         """Save model to s3 bucket"""
         s3 = utils.S3Client()
         s3.upload_file(filename=filename, key=key)
 
-    def load_from_s3(self, filename: str, key: str) -> None:
+    @staticmethod
+    def load_from_s3(filename: str, key: str) -> None:
         """Download model from s3 bucket"""
         s3 = utils.S3Client()
         s3.download_file(filename=filename, key=key)
 
-    def save(self, filename):
-        """Serialize model"""
-        joblib.dump(self, filename)
-
-    def load(self, filename):
+    @staticmethod
+    def load(self, filename: str):
         """Load trained model"""
         return joblib.load(filename)
+
+    def save(self, filename: str):
+        """Serialize model"""
+        joblib.dump(self, filename)
 
 
 class ResNet34(nn.Module, BaseModel):

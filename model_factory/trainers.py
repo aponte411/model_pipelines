@@ -1,5 +1,5 @@
 import os
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple
 
 import joblib
@@ -25,7 +25,7 @@ from utils import EarlyStopping
 LOGGER = utils.get_logger(__name__)
 
 
-class BaseTrainer:
+class BaseTrainer(ABC):
     """Base class for training/inference
 
     Args:
@@ -34,36 +34,17 @@ class BaseTrainer:
     def __init__(self, model: Any, **kwds):
         super().__init__(**kwds)
         self.model = model
-        self.model = None
-        self.model_path = None
 
     @abstractmethod
     def train(self):
-        pass
+        """Login to train models"""
+        raise NotImplementedError()
 
     def get_model_path(self):
         return self.model_path
 
     def get_model(self):
         return self.model
-
-    def load_model_locally(self):
-        pass
-
-    def load_model_from_s3(self):
-        pass
-
-    def predict(self):
-        pass
-
-    def predict_and_score(self):
-        pass
-
-    def save_model_locally(self):
-        pass
-
-    def save_model_to_s3(self):
-        pass
 
 
 class QuoraTrainer(BaseTrainer):

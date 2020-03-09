@@ -1,4 +1,5 @@
 import os
+from abc import ABC
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -12,7 +13,7 @@ from utils import get_logger
 LOGGER = get_logger(__name__)
 
 
-class CrossValidator:
+class CrossValidator(ABC):
     def __init__(self, input_path: str, output_path: str, target: Any, **kwds):
         super().__init__(**kwds)
         self.input_path = input_path
