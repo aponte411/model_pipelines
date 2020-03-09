@@ -1,3 +1,5 @@
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 import torch
@@ -230,10 +232,10 @@ class GoogleQATPUEngine(Engine):
         xm.master_print(
             f'Validating the model using folds {self.params["training_params"].get("val_folds")[0]}'
         )
-        train_parallel_loader = pl.ParallelLoader()
         train = self._get_training_loader(
             folds=self.params["training_params"].get("train_folds"),
             name="train")
+        train_parallel_loader = pl.ParallelLoader(train, [self.trainer.device])
         val = self._get_training_loader(
             folds=self.params["training_params"].get("val_folds"), name="val")
         val_parallel_loader = pl.ParallelLoader(val, [self.trainer.device])
