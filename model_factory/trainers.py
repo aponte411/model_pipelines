@@ -1,4 +1,5 @@
 import os
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple
 
@@ -16,11 +17,13 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from dispatcher import MODEL_DISPATCHER
 import models
 import utils
+from dispatcher import MODEL_DISPATCHER
 from metrics import macro_recall, spearman_correlation
 from utils import EarlyStopping
+
+warnings.filterwarnings('ignore')
 
 LOGGER = utils.get_logger(__name__)
 
