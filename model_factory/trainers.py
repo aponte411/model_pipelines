@@ -105,7 +105,7 @@ class BengaliTrainer(BaseTrainer):
     def setup_device(self):
         # device_ids = [f'cuda:{id}' for id in range(torch.cuda.device_count())]
         self.device = torch.device(
-            'cuda:1' if torch.cuda.is_available() else 'cpu')
+            'cuda' if torch.cuda.is_available() else 'cpu')
 
     def get_model_name(self):
         return self.model_name

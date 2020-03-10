@@ -80,6 +80,7 @@ class BengaliEngine(Engine):
         self.val_constructor = datasets.BengaliDataSetTrain
         self.test_constructor = datasets.BengaliDataSetTest
         self.params = params
+        self.ordered_devices = None
         self.model_name = None
         self.model_state_path = None
 
@@ -144,9 +145,15 @@ class BengaliEngine(Engine):
             f'Validating the model using folds {self.params["val_folds"]}')
         LOGGER.info(f'Using {torch.cuda.device_count()} GPUs')
         if torch.cuda.device_count() > 1:
-            # device_ids = [id for id in range(torch.cuda.device_count())]
+            device_ids = [id for id in range(torch.cuda.device_count())]
+            self.ordered_devices = [
+                device for device in device_ids
+                if 0 <= device < torch.cuda.device_count()
+            ]
+            torch.cuda.set_device(ordered_devices[0])
+            self.trainer.device = torch.device("cuda")
             self.trainer.model = nn.DataParallel(self.trainer.model,
-                                                 [1, 2, 3, 0])
+                                                 self.ordered_devices)
         self.trainer.model.to(self.trainer.device)
         train = self._get_training_loader(folds=self.params["train_folds"],
                                           name='training')
