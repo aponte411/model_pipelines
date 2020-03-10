@@ -150,7 +150,7 @@ class BengaliEngine(Engine):
                 device for device in device_ids
                 if 0 <= device < torch.cuda.device_count()
             ]
-            torch.cuda.set_device(ordered_devices[0])
+            torch.cuda.set_device(self.ordered_devices[0])
             self.trainer.device = torch.device("cuda")
             self.trainer.model = nn.DataParallel(self.trainer.model,
                                                  self.ordered_devices)
