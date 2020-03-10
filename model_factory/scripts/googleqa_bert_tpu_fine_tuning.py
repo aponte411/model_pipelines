@@ -33,8 +33,8 @@ class GoogleQATPUTrainer(BaseTrainer):
         model {Any} -- trainable model.
         model_name {str} -- name of model
     """
-    def __init__(self, model: Any, model_name: str = None, **kwds):
-        super().__init__(model, **kwds)
+    def __init__(self, model: Any, model_name: str = None):
+        super().__init__(model)
         self.model_name = model_name
         self.device = xm.xla_device()
         self.optimizer = transformers.AdamW(self.model.parameters(),
@@ -189,9 +189,8 @@ class GoogleQATPUTrainer(BaseTrainer):
 
 
 class GoogleQATPUEngine(Engine):
-    def __init__(self, trainer: trainers.BaseTrainer, config_file: str,
-                 **kwds):
-        super().__init__(trainer, **kwds)
+    def __init__(self, trainer: trainers.BaseTrainer, config_file: str):
+        super().__init__(trainer)
         self.params: Dict = self.get_params(config_file)
         self.train_contructor = GoogleQADataSetTrain
         self.val_contructor = GoogleQADataSetTrain
@@ -225,7 +224,9 @@ class GoogleQATPUEngine(Engine):
         with open(config_file, 'rb') as f:
             return yaml.load(f)
 
-    def run_training_engine(self, save_to_s3: bool = False, creds: Dict = {}):
+    def run_training_engine(self,
+                            save_to_s3: bool = False,
+                            creds: Dict = {}) -> None:
         xm.master_print(
             f'Training the model using folds: {self.params["training_params"].get("train_folds")}'
         )

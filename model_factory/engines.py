@@ -359,3 +359,85 @@ class GoogleQAEngine(Engine):
 
     def run_inference_engine(self):
         pass
+
+
+class IMDBEngine(Engine):
+    def __init__(self, trainer: trainers.BaseTrainer, config_file: str):
+        super().__init__(trainer)
+        self.params: Dict = self.get_params(config_file)
+        self.train_contructor = datasets.IMDBDataSet
+        self.val_contructor = datasets.IMDBDataSet
+        self.test_contructor = datasets.IMDBDataSet
+        self.tokenizer = transformers.BertTokenizer.from_pretrained(
+            'bert-base-uncased', do_lower_case=True)
+
+    def _get_training_loader(self, folds: List[int], name: str) -> DataLoader:
+        if name == "val":
+            batch_size = self.params["training_params"].get("test_batch_size")
+        else:
+            batch_size = self.params["training_params"].get("train_batch_size")
+        constructor = getattr(self, f'{name}_constructor')
+        setattr(
+            self, f'{name}_set',
+            constructor(
+                data_folder=self.params["data_params"].get("train_path"),
+                folds=folds,
+                tokenizer=self.tokenzier,
+                max_len=self.params["data_params"].get("max_len")))
+        return DataLoader(dataset=getattr(self, f'{name}_set'),
+                          batch_size=batch_size,
+                          shuffle=True,
+                          num_workers=4)
+
+    @staticmethod
+    def get_params(config_file: str) -> Dict:
+        with open(config_file, 'rb') as f:
+            return yaml.load(f)
+
+    def run_training_engine(self, save_to_s3: bool = False, creds: Dict = {}):
+        LOGGER.info(
+            f'Training the model using folds: {self.params["training_params"].get("train_folds")}'
+        )
+        LOGGER.info(
+            f'Validating the model using folds {self.params["training_params"].get("val_folds")[0]}'
+        )
+        LOGGER.info(f'Using {torch.cuda.device_count()} GPUs')
+        if torch.cuda.device_count() > 1:
+            self.trainer.model = nn.DataParallel(self.trainer.model)
+        train = self._get_training_loader(
+            folds=self.params["training_params"].get("train_folds"),
+            name="train")
+        val = self._get_training_loader(
+            folds=self.params["training_params"].get("val_folds"), name="val")
+        self.model_name = f'{self.trainer.get_model_name()}_imdb'
+        model_with_val_fold = f'{self.model_name}_fold{self.params["training_params"].get("val_folds")}.pth'
+        self.model_state_path = f'{self.params["model_params"].get("model_dir")}/{model_with_val_fold}'
+        best_score = -1
+        for epoch in range(1,
+                           self.params["training_params"].get("epochs") + 1):
+            LOGGER.info(f'EPOCH: {epoch}')
+            train_loss, train_score = self.trainer.train(train)
+            val_loss, val_score = self.trainer.evaluate(val)
+            if val_score > best_score:
+                best_score = val_score
+                self.trainer.save_model_locally(
+                    model_path=self.model_state_path)
+                if save_to_s3:
+                    self.trainer.save_model_to_s3(
+                        filename=self.model_state_path,
+                        key=model_with_val_fold,
+                        creds=creds)
+            LOGGER.info(
+                f'Training loss: {train_loss:.3f}, Training score: {train_score:.3f}'
+            )
+            LOGGER.info(
+                f'Validation loss: {val_loss:.3f}, Validation score: {val_score:.3f}'
+            )
+            self.trainer.scheduler.step(val_loss)
+            self.trainer.early_stopping(val_score, self.trainer.model)
+            if self.trainer.early_stopping.early_stop:
+                LOGGER.info(f'Early stopping at epoch: {epoch}')
+                break
+
+    def run_inference_engine(self):
+        pass
