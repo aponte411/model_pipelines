@@ -392,7 +392,7 @@ class IMDBDataSet(Dataset):
         }).values
 
     def __len__(self):
-        return len(self.answer)
+        return len(self.review)
 
     def __getitem__(self, item: int) -> Dict:
         def _preprocess(array: np.array) -> str:

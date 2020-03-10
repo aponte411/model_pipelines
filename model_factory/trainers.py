@@ -430,16 +430,49 @@ class IMDBTrainer(BaseTrainer):
         model {Any} -- trainable model.
         model_name {str} -- name of model
     """
-    def __init__(self, model: Any, model_name: str = None):
+    def __init__(self,
+                 model: Any,
+                 model_name: str = None,
+                 num_training_steps: int = 10000 / 8 * 12):
         super().__init__(model)
         self.model_name = model_name
+        self.num_training_steps = num_training_steps
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.optimizer = transformers.AdamW(self.model.parameters(), lr=1e-4)
         self.criterion = nn.BCEWithLogitsLoss()
         self.early_stopping = EarlyStopping(patience=5, verbose=True)
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer, mode="max", patience=5, factor=0.3, verbose=True)
+        self.setup_optimizer_and_scheduler
+
+    @property
+    def setup_optimizer_and_scheduler(self):
+        def _filter_params(parameters: List,
+                           filters: List[str],
+                           exclude: bool = True) -> List[str]:
+            if exclude:
+                return [
+                    parameter for name, parameter in parameters
+                    if not any(param in name for param in filters)
+                ]
+            else:
+                return [
+                    parameter for name, parameter in parameters
+                    if any(param in name for param in filters)
+                ]
+
+        model_params = list(self.model.named_parameters())
+        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+        optimizer_params = [{
+            'params':
+            _filter_params(params=model_params, filter=no_decay, exclude=True)
+        }, {
+            'params':
+            _filter_params(params=model_params, filter=no_decay, exclude=False)
+        }]
+        self.optimizer = transformers.AdamW(optimizer_params, lr=1e-4)
+        self.scheduler = transformers.get_linear_schedule_with_warmup(
+            self.optimizer,
+            num_warmup_steps=0,
+            num_training_steps=self.num_training_steps)
 
     def get_model_name(self) -> str:
         return self.model_name
