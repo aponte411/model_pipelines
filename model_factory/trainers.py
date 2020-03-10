@@ -92,8 +92,6 @@ class BengaliTrainer(BaseTrainer):
     def __init__(self, model: Any, model_name: str = None):
         super().__init__(model)
         self.model_name = model_name
-        # self.device = torch.device(
-        #     'cuda: 1' if torch.cuda.is_available() else 'cpu')
         self.setup_device
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
         self.criterion = nn.CrossEntropyLoss()
@@ -103,7 +101,6 @@ class BengaliTrainer(BaseTrainer):
 
     @property
     def setup_device(self):
-        # device_ids = [f'cuda:{id}' for id in range(torch.cuda.device_count())]
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
 
