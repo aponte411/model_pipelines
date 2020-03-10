@@ -49,7 +49,7 @@ TRAINING_PARAMS = {
 @click.option('-pickle',
               '--pickle-path',
               type=str,
-              default='inputs/pickled_images')
+              default='inputs/image_pickles')
 @click.option('-sub', '--submission-dir', type=str, default='inputs')
 @click.option('-model', '--model-dir', type=str, default='trained_models')
 @click.option('-trainb', '--train-batch-size', type=int, default=64)
