@@ -7,8 +7,9 @@ data_params:
 model_params:
   model_dir: "trained_models"
 training_params:
-  train_folds: [0]
-  val_folds: [4]
+  train_folds: [0, 1, 2]
+  val_folds: [3]
+  test_folds: [4]
   epochs: 12
   train_batch_size: 8
   test_batch_size: 4

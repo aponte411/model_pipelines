@@ -544,7 +544,8 @@ class IMDBTrainer(BaseTrainer):
             self.optimizer.step()
             self.scheduler.step()
             final_loss += loss
-            final_preds.append(self.stack_tensors(tensor=predictions))
+            final_preds.append(
+                self.stack_tensors(tensor=torch.sigmoid(predictions)))
             final_targets.append(self.stack_tensors(tensor=targets))
 
         spearman_correlation = self.score(preds=final_preds,
@@ -572,7 +573,7 @@ class IMDBTrainer(BaseTrainer):
                                          token_type_ids=token_type_ids)
                 loss = self._loss_fn(preds=predictions, targets=targets)
                 final_loss += self._loss_fn(preds=predictions, targets=targets)
-                final_preds.append(self.concat_tensors(tensor=predictions))
+                final_preds.append(self.stack_tensors(tensor=predictions))
                 final_targets.append(self.stack_tensors(tensor=targets))
 
             spearman_correlation = self.score(preds=final_preds,

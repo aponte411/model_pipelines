@@ -328,8 +328,8 @@ class GoogleQADataSetTest(Dataset):
             mask = inputs['attention_mask']
             return ids, token_type_ids, mask
 
-        def _add_padding(array: np.array, len: int) -> np.array:
-            return array + ([0] * len)
+        def _add_padding(array: np.array, length: int) -> np.array:
+            return array + ([0] * length)
 
         question_title = _preprocess(array=self.question_title[item])
         question_body = _preprocess(array=self.question_body[item])
@@ -386,7 +386,10 @@ class IMDBDataSet(Dataset):
 
         df = _get_data()
         self.review = df.review.values
-        self.targets = df.sentiment.values
+        self.targets = df.sentiment.replace({
+            "positive": 1,
+            "negative": 0
+        }).values
 
     def __len__(self):
         return len(self.answer)
@@ -406,11 +409,11 @@ class IMDBDataSet(Dataset):
             mask = inputs['attention_mask']
             return ids, token_type_ids, mask
 
-        def _add_padding(array: np.array, len: int) -> np.array:
-            return array + ([0] * len)
+        def _add_padding(array: np.array, length: int) -> np.array:
+            return array + ([0] * length)
 
         review = _preprocess(array=self.review[item])
-        sentiment = _preprocess(array=self.sentiment[item])
+        targets = _preprocess(array=self.targets[item])
         ids, token_type_ids, mask = _encode_strings(review=review)
 
         padding = self.max_len - len(ids)
@@ -422,5 +425,5 @@ class IMDBDataSet(Dataset):
             "ids": torch.tensor(ids, dtype=torch.long),
             "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
             "attention_mask": torch.tensor(mask, dtype=torch.long),
-            "targets": torch.tensor(sentiment, dtype=torch.float)
+            "targets": torch.tensor(targets, dtype=torch.float)
         }

@@ -307,6 +307,17 @@ class GoogleQAEngine(Engine):
                           shuffle=True,
                           num_workers=4)
 
+    def _get_testing_loader(self, folds: List[int]) -> DataLoader:
+        test_set = self.test_constructor(
+            data_folder=self.params["data_params"].get("test_path"),
+            folds=folds,
+            tokenizer=self.tokenzier,
+            max_len=self.params["data_params"].get("max_len"))
+        return DataLoader(dataset=test_set,
+                          batch_size=self.params["test_batch_size"],
+                          shuffle=False,
+                          num_workers=4)
+
     @staticmethod
     def get_params(config_file: str) -> Dict:
         with open(config_file, 'rb') as f:
@@ -388,6 +399,19 @@ class IMDBEngine(Engine):
                           batch_size=batch_size,
                           shuffle=True,
                           num_workers=4)
+
+    def _get_testing_loader(self) -> DataLoader:
+        setattr(
+            self, 'test_set',
+            self.test_constructor(
+                data_folder=self.params["data_params"].get("test_path"),
+                folds=self.params["training_params"].get("test_folds"),
+                tokenizer=self.tokenzier,
+                max_len=self.params["data_params"].get("max_len")))
+        return DataLoader(dataset=getattr(self, 'test_set'),
+                          batch_size=self.params["test_batch_size"],
+                          shuffle=False,
+                          num_workers=1)
 
     @staticmethod
     def get_params(config_file: str) -> Dict:
