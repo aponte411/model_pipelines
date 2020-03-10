@@ -145,6 +145,7 @@ class BengaliEngine(Engine):
         LOGGER.info(f'Using {torch.cuda.device_count()} GPUs')
         if torch.cuda.device_count() > 1:
             self.trainer.model = nn.DataParallel(self.trainer.model)
+            self.trainer.model(self.trainer.device)
         train = self._get_training_loader(folds=self.params["train_folds"],
                                           name='training')
         val = self._get_training_loader(folds=self.params["val_folds"],
@@ -333,6 +334,7 @@ class GoogleQAEngine(Engine):
         LOGGER.info(f'Using {torch.cuda.device_count()} GPUs')
         if torch.cuda.device_count() > 1:
             self.trainer.model = nn.DataParallel(self.trainer.model)
+            self.trainer.model(self.trainer.device)
         train = self._get_training_loader(
             folds=self.params["training_params"].get("train_folds"),
             name="train")
@@ -428,6 +430,7 @@ class IMDBEngine(Engine):
         LOGGER.info(f'Using {torch.cuda.device_count()} GPUs')
         if torch.cuda.device_count() > 1:
             self.trainer.model = nn.DataParallel(self.trainer.model)
+            self.trainer.model(self.trainer.device)
         train = self._get_training_loader(
             folds=self.params["training_params"].get("train_folds"),
             name="train")
