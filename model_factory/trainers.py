@@ -48,8 +48,8 @@ class BaseTrainer(ABC):
 
 
 class QuoraTrainer(BaseTrainer):
-    def __init__(self, model: Any, **kwds):
-        super().__init__(model, **kwds)
+    def __init__(self, model: Any):
+        super().__init__(model)
 
     def load_model_locally(self, key: str):
         LOGGER.info(f"Using saved model for {self.tournament}")
@@ -196,7 +196,7 @@ class BengaliTrainer(BaseTrainer):
         s3.download_file(filename=filename, key=key)
 
     def train(self, data_loader: DataLoader) -> Tuple[float, float]:
-        self.model.to(self.device)
+        # self.model.to(self.device)
         self.model.train()
         final_loss = 0
         counter = 0
