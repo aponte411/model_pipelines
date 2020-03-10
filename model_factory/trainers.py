@@ -34,8 +34,8 @@ class BaseTrainer(ABC):
     Args:
         model {Any} -- object from models module.
     """
-    def __init__(self, model: Any, **kwds):
-        super().__init__(**kwds)
+    def __init__(self, model: Any):
+        super().__init__()
         self.model = model
 
     @abstractmethod
@@ -89,8 +89,8 @@ class QuoraTrainer(BaseTrainer):
 
 
 class BengaliTrainer(BaseTrainer):
-    def __init__(self, model: Any, model_name: str = None, **kwds):
-        super().__init__(model, **kwds)
+    def __init__(self, model: Any, model_name: str = None):
+        super().__init__(model)
         self.model_name = model_name
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -248,6 +248,7 @@ class BengaliTrainer(BaseTrainer):
         pass
 
 
+# WIP
 class BengaliLightningTrainer(Trainer):
     def __init__(self):
         super().__init__()
@@ -265,8 +266,8 @@ class GoogleQATrainer(BaseTrainer):
         model {Any} -- trainable model.
         model_name {str} -- name of model
     """
-    def __init__(self, model: Any, model_name: str = None, **kwds):
-        super().__init__(model, **kwds)
+    def __init__(self, model: Any, model_name: str = None):
+        super().__init__(model)
         self.model_name = model_name
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')

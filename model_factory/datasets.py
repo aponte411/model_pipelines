@@ -422,5 +422,5 @@ class IMDBDataSet(Dataset):
             "ids": torch.tensor(ids, dtype=torch.long),
             "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
             "attention_mask": torch.tensor(mask, dtype=torch.long),
-            "target": torch.tensor(sentiment, dtype=torch.float)
+            "targets": torch.tensor(sentiment, dtype=torch.float)
         }

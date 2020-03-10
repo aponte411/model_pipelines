@@ -38,8 +38,8 @@ LOGGER = utils.get_logger(__name__)
 
 
 class BaseModel(ABC):
-    def __init__(self, **kwds):
-        super().__init__(**kwds)
+    def __init__(self):
+        super().__init__()
 
     @staticmethod
     def save_to_s3(filename: str, key: str) -> None:
@@ -64,8 +64,8 @@ class BaseModel(ABC):
 
 
 class ResNet34(nn.Module, BaseModel):
-    def __init__(self, pretrained: bool, **kwds):
-        super().__init__(**kwds)
+    def __init__(self, pretrained: bool):
+        super().__init__()
         if pretrained:
             self.model = pretrainedmodels.__dict__["resnet34"](
                 pretrained="imagenet")
@@ -86,8 +86,8 @@ class ResNet34(nn.Module, BaseModel):
 
 
 class ResNet50(nn.Module, BaseModel):
-    def __init__(self, pretrained: bool, **kwds):
-        super().__init__(**kwds)
+    def __init__(self, pretrained: bool):
+        super().__init__()
         if pretrained:
             self.model = pretrainedmodels.__dict__["resnet50"](
                 pretrained="imagenet")
@@ -108,8 +108,8 @@ class ResNet50(nn.Module, BaseModel):
 
 
 class SeResNext101(nn.Module, BaseModel):
-    def __init__(self, pretrained: bool = True, **kwds):
-        super().__init__(**kwds)
+    def __init__(self, pretrained: bool = True):
+        super().__init__()
         if pretrained:
             self.model = pretrainedmodels.__dict__["se_resnext101_32x4d"](
                 pretrained="imagenet")
@@ -240,8 +240,8 @@ class ResNet34Lightning(pl.LightningModule):
 
 
 class GPT2(nn.Module, BaseModel):
-    def __init__(self, **kwds):
-        super().__init__(**kwds)
+    def __init__(self):
+        super().__init__()
         self.model = GPT2LMHeadModel.from_pretrained('gpt2')
 
 

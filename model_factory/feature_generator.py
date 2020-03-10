@@ -1,5 +1,5 @@
 import os
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, List, Tuple
 
 import joblib
@@ -35,8 +35,9 @@ def label_encode_all_features(train: pd.DataFrame, val: pd.DataFrame,
     return train, val
 
 
-class FeatureGenerator:
+class FeatureGenerator(ABC):
     def __init__(self, name: str):
+        super().__init__()
         self.name = name
 
     def __repr__(self):
@@ -55,7 +56,7 @@ class FeatureGenerator:
 
 class QuoraFeatureGenerator(FeatureGenerator):
     def __init__(self, name: str):
-        super().__init__(name=name)
+        super().__init__(name)
 
     def create_features(self, X: pd.DataFrame) -> pd.DataFrame:
         def _preprocess(X: pd.DataFrame):

@@ -14,8 +14,8 @@ LOGGER = get_logger(__name__)
 
 
 class CrossValidator(ABC):
-    def __init__(self, input_path: str, output_path: str, target: Any, **kwds):
-        super().__init__(**kwds)
+    def __init__(self, input_path: str, output_path: str, target: Any):
+        super().__init__()
         self.input_path = input_path
         self.output_path = output_path
         self.target = target
@@ -63,8 +63,8 @@ class CrossValidator(ABC):
 
 
 class QuoraCrossValidator(CrossValidator):
-    def __init__(self, input_path: str, output_path: str, target: str, **kwds):
-        super().__init__(input_path, output_path, target, **kwds)
+    def __init__(self, input_path: str, output_path: str, target: str):
+        super().__init__(input_path, output_path, target)
 
     def apply_stratified_kfold(self) -> None:
         train = self.load_train_for_cv(input_path=self.input_path)
@@ -81,8 +81,8 @@ class QuoraCrossValidator(CrossValidator):
 
 
 class BengaliCrossValidator(CrossValidator):
-    def __init__(self, input_path: str, output_path: str, target: str, **kwds):
-        super().__init__(input_path, output_path, target, **kwds)
+    def __init__(self, input_path: str, output_path: str, target: str):
+        super().__init__(input_path, output_path, target)
 
     def _split_data(self,
                     train: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -105,8 +105,8 @@ class BengaliCrossValidator(CrossValidator):
 
 
 class GoogleQACrossValidator(CrossValidator):
-    def __init__(self, input_path: str, output_path: str, target: str, **kwds):
-        super().__init__(input_path, output_path, target, **kwds)
+    def __init__(self, input_path: str, output_path: str, target: str):
+        super().__init__(input_path, output_path, target)
 
     @staticmethod
     def get_targets(target_path: str) -> List[str]:
@@ -128,12 +128,8 @@ class GoogleQACrossValidator(CrossValidator):
 
 
 class IMDBCrossValidator(CrossValidator):
-    def __init__(self,
-                 input_path: str,
-                 output_path: str,
-                 target: str = None,
-                 **kwds):
-        super().__init__(input_path, output_path, target, **kwds)
+    def __init__(self, input_path: str, output_path: str, target: str = None):
+        super().__init__(input_path, output_path, target)
 
     def apply_kfold(self, save: bool = True) -> pd.DataFrame:
         train = self.load_train_for_cv(input_path=self.input_path)
