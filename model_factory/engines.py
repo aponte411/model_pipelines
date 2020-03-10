@@ -144,8 +144,9 @@ class BengaliEngine(Engine):
             f'Validating the model using folds {self.params["val_folds"]}')
         LOGGER.info(f'Using {torch.cuda.device_count()} GPUs')
         if torch.cuda.device_count() > 1:
-            self.trainer.model = nn.DataParallel(self.trainer.model)
-            self.trainer.model.to(self.trainer.device)
+            device_ids = [id for id in range(torch.cuda.device_count())]
+            self.trainer.model = nn.DataParallel(self.trainer.model, device_ids)
+        self.trainer.model.to(self.trainer.device)
         train = self._get_training_loader(folds=self.params["train_folds"],
                                           name='training')
         val = self._get_training_loader(folds=self.params["val_folds"],
