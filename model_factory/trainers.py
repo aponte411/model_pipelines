@@ -270,7 +270,7 @@ class GoogleQATrainer(BaseTrainer):
         super().__init__(model)
         self.model_name = model_name
         self.device = torch.device(
-            'cuda:0' if torch.cuda.is_available() else 'cpu')
+            'cuda' if torch.cuda.is_available() else 'cpu')
         self.optimizer = transformers.AdamW(self.model.parameters(), lr=1e-4)
         self.criterion = nn.BCEWithLogitsLoss()
         self.early_stopping = EarlyStopping(patience=5, verbose=True)
