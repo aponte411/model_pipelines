@@ -467,10 +467,15 @@ class IMDBTrainer(BaseTrainer):
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
         optimizer_params = [{
             'params':
-            _filter_params(params=model_params, filter=no_decay, exclude=True)
+            _filter_params(params=model_params, filter=no_decay, exclude=True),
+            'weight_decay':
+            0.001
         }, {
             'params':
-            _filter_params(params=model_params, filter=no_decay, exclude=False)
+            _filter_params(params=model_params, filter=no_decay,
+                           exclude=False),
+            'weight_decay':
+            0.0
         }]
         self.optimizer = transformers.AdamW(optimizer_params, lr=1e-4)
         self.scheduler = transformers.get_linear_schedule_with_warmup(
