@@ -32,7 +32,6 @@ class Engine(ABC):
         parameters
     """
     def __init__(self, trainer: trainers.BaseTrainer):
-        super().__init__()
         self.trainer = trainer
 
     @abstractmethod
@@ -158,7 +157,7 @@ class BengaliEngine(Engine):
             torch.cuda.set_device(self.available_devices[0])
             self.trainer.device = torch.device("cuda")
             self.trainer.model = nn.DataParallel(
-                    self.trainer.model, device_ids=self.available_devices)
+                self.trainer.model, device_ids=self.available_devices)
         self.trainer.model.to(self.trainer.device)
         train = self._get_training_loader(folds=self.params["train_folds"],
                                           name='training')
