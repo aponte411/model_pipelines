@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import sklearn.metrics as metrics
 import torch
+import tensorflow as tf
 from scipy import stats
 
 import utils
@@ -55,3 +56,12 @@ def spearman_correlation(predictions: torch.Tensor,
         coef, _ = np.nan_to_num(stats.spearmanr(p1, p2))
         spearman.append(coef)
     return np.mean(spearman)
+
+
+def keras_auc(y_true, y_pred):
+    def fallback_auc(y_true, y_pred):
+        try:
+            return metrics.roc_auc_score(y_true, y_pred)
+        except:
+            return 0.5
+    return tf.py_function(fallback_auc, (y_true, y_pred), tf.double)

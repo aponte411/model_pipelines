@@ -8,8 +8,13 @@ import tensorflow as tf
 from sklearn import preprocessing
 from tensorflow.keras import Model, layers, optimizers
 from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.utils import multi_gpu_model
+from tensorflow.keras import callbacks
+from tensorflow.keras import utils as keras_utils
 
 import utils
+import metrics
+
 LOGGER = utils.get_logger(__name__)
 
 
@@ -20,6 +25,8 @@ def parse_args() -> types.SimpleNamespace:
     parser.add_argument('--test-path',
                         default='inputs/categorical_challenge/test.csv')
     parser.add_argument('--target', default='target')
+    parser.add_argument('--model-path', default='trained_models')
+    parser.add_argument('--n-gpus', default=4)
     return parser.parse_args()
 
 
@@ -48,17 +55,17 @@ def prepare_data_dictionary(df: pd.DataFrame) -> Dict:
     def _label_encode(df: pd.DataFrame, feature_names: List[str]) -> Tuple:
         for feat in feature_names:
             LOGGER.info(f'Preprocessing Feature {feat}')
-            lbl = preprocessing.LabelEncoder()
-            lbl.fit(df[feat].values.tolist())
-            df[feat] = lbl.transform(df[feat].values)
+            encoder = preprocessing.LabelEncoder()
+            df[feat] = encoder.fit_transform(df[feat].fillna("-1").astype(str).values)
         return df
 
     feature_names = _get_feature_names(df=df)
     encoded_data = _label_encode(df=df, feature_names=feature_names)
     train, test = _split_combined_into_train_test(combined_df=encoded_data)
     return {
+        'combined': encoded_data,
         'X_train': train,
-        'X_val': test,
+        'X_valid': test,
         'y_train': train.target,
         'y_valid': test.target,
         'feature_names': feature_names
@@ -68,8 +75,8 @@ def prepare_data_dictionary(df: pd.DataFrame) -> Dict:
 def create_model(df: pd.DataFrame, features: List[str]) -> Model:
     inputs, outputs = [], []
     for feature in features:
-        num_unique_vals = df[feature].nunique()
-        embedding_dim = min((num_unique_vals // 2), 50)
+        num_unique_vals = int(df[feature].nunique())
+        embedding_dim = int(min(np.ceil(num_unique_vals / 2), 50))
         input_layer = layers.Input(shape=(1, ))
         output = layers.Embedding(num_unique_vals + 1,
                                   embedding_dim,
@@ -79,25 +86,61 @@ def create_model(df: pd.DataFrame, features: List[str]) -> Model:
         outputs.append(output_layer)
 
     x = layers.Concatenate()(outputs)
+    x = layers.BatchNormalization()(x)
     x = layers.Dense(300, activation='relu')(x)
     x = layers.Dropout(0.3)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dense(300, activation="relu")(x)
+    x = layers.Dropout(0.3)(x)
+    x = layers.BatchNormalization()(x)
     y = layers.Dense(1, activation='sigmoid')(x)
     return Model(inputs=inputs, outputs=y)
 
 
 def listify_features(df: pd.DataFrame, features: List[str]) -> List[np.array]:
-    return [df.loc[:, feature].values for feature in features]
+    return [df.loc[:, features].values[:, k] for k in range(df.loc[:, features].values.shape[1])]
 
 
 def main(args: types.SimpleNamespace):
     combined_data = combine_train_and_test(args=args)
     data_dictionary = prepare_data_dictionary(df=combined_data)
-    feature_lists = listify_features(df=data_dictionary['X_train'],
+    train_feature_lists = listify_features(df=data_dictionary['X_train'],
                                      features=data_dictionary['feature_names'])
-    model = create_model(df=data_dictionary['X_train'],
+    val_feature_lists = listify_features(df=data_dictionary['X_valid'],
+                                     features=data_dictionary['feature_names'])
+    model = create_model(df=data_dictionary['combined'],
                          features=data_dictionary['feature_names'])
-    model.compile(optimizer='adam', loss='binary_crossentropy')
-    model.fit(feature_lists, data_dictionary['y_train'])
+    model = multi_gpu_model(model, gpus=args.n_gpus, cpu_relocation=True)
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=[metrics.keras_auc])
+    early_stopping = callbacks.EarlyStopping(
+        monitor='val_auc',
+        min_delta=0.001, 
+        patience=5,                       
+        verbose=1, 
+        mode='max', 
+        baseline=None, 
+        restore_best_weights=True
+    )
+    reduce_lr = callbacks.ReduceLROnPlateau(
+        monitor='val_auc', 
+        factor=0.5,
+        patience=3, 
+        min_lr=1e-6, 
+        mode='max', 
+        verbose=1
+    )
+    model.fit(
+        train_feature_lists, 
+        keras_utils.to_categorical(data_dictionary['y_train']), 
+        validation_data=(
+            val_feature_lists, 
+            keras_utils.to_categorical(data_dictionary['y_valid'])),
+        verbose=1,
+        batch_size=1024,
+        callbacks=[early_stopping, reduce_lr],
+        epochs=100
+        )
+    model.save(f'{args.model_path}/keras_entity_embedding.h5')
 
 
 if __name__ == "__main__":
