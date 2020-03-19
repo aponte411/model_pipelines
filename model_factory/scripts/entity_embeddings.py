@@ -6,14 +6,13 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn import preprocessing
-from tensorflow.keras import Model, layers, optimizers
+from tensorflow.keras import Model, callbacks, layers, optimizers
+from tensorflow.keras import utils as keras_utils
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.utils import multi_gpu_model
-from tensorflow.keras import callbacks
-from tensorflow.keras import utils as keras_utils
 
-import utils
 import metrics
+import utils
 
 LOGGER = utils.get_logger(__name__)
 
