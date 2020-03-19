@@ -131,10 +131,10 @@ def main(args: types.SimpleNamespace):
     )
     model.fit(
         train_feature_lists, 
-        keras_utils.to_categorical(data_dictionary['y_train']), 
+        data_dictionary['y_train'], 
         validation_data=(
             val_feature_lists, 
-            keras_utils.to_categorical(data_dictionary['y_valid'])),
+            data_dictionary['y_valid']),
         verbose=1,
         batch_size=1024,
         callbacks=[early_stopping, reduce_lr],
