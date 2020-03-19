@@ -32,7 +32,7 @@ def combine_train_and_test(args: types.SimpleNamespace) -> pd.DataFrame:
     return combined
 
 
-def prepare_train_test_data(df: pd.DataFrame) -> Dict:
+def prepare_data_dictionary(df: pd.DataFrame) -> Dict:
     def _get_feature_names(df: pd.DataFrame) -> List[str]:
         return [
             feature for feature in df.columns
@@ -91,7 +91,7 @@ def listify_features(df: pd.DataFrame, features: List[str]) -> List[np.array]:
 
 def main(args: types.SimpleNamespace):
     combined_data = combine_train_and_test(args=args)
-    data_dictionary = prepare_train_test_data(df=combined_data)
+    data_dictionary = prepare_data_dictionary(df=combined_data)
     feature_lists = listify_features(df=data_dictionary['X_train'],
                                      features=data_dictionary['feature_names'])
     model = create_model(df=data_dictionary['X_train'],
