@@ -56,7 +56,8 @@ def prepare_data_dictionary(df: pd.DataFrame) -> Dict:
         for feat in feature_names:
             LOGGER.info(f'Preprocessing Feature {feat}')
             encoder = preprocessing.LabelEncoder()
-            df[feat] = encoder.fit_transform(df[feat].fillna("-1").astype(str).values)
+            df[feat] = encoder.fit_transform(
+                df[feat].fillna("-1").astype(str).values)
         return df
 
     feature_names = _get_feature_names(df=df)
@@ -90,7 +91,7 @@ def create_model(df: pd.DataFrame, features: List[str]) -> Model:
     x = layers.Dense(300, activation='relu')(x)
     x = layers.Dropout(0.3)(x)
     x = layers.BatchNormalization()(x)
-    x = layers.Dense(300, activation="relu")(x)
+    x = layers.Dense(300, activation='relu')(x)
     x = layers.Dropout(0.3)(x)
     x = layers.BatchNormalization()(x)
     y = layers.Dense(1, activation='sigmoid')(x)
@@ -98,48 +99,47 @@ def create_model(df: pd.DataFrame, features: List[str]) -> Model:
 
 
 def listify_features(df: pd.DataFrame, features: List[str]) -> List[np.array]:
-    return [df.loc[:, features].values[:, k] for k in range(df.loc[:, features].values.shape[1])]
+    return [
+        df.loc[:, features].values[:, k]
+        for k in range(df.loc[:, features].values.shape[1])
+    ]
 
 
 def main(args: types.SimpleNamespace):
     combined_data = combine_train_and_test(args=args)
     data_dictionary = prepare_data_dictionary(df=combined_data)
-    train_feature_lists = listify_features(df=data_dictionary['X_train'],
-                                     features=data_dictionary['feature_names'])
-    val_feature_lists = listify_features(df=data_dictionary['X_valid'],
-                                     features=data_dictionary['feature_names'])
+    train_feature_lists = listify_features(
+        df=data_dictionary['X_train'],
+        features=data_dictionary['feature_names'])
+    val_feature_lists = listify_features(
+        df=data_dictionary['X_valid'],
+        features=data_dictionary['feature_names'])
     model = create_model(df=data_dictionary['combined'],
                          features=data_dictionary['feature_names'])
     model = multi_gpu_model(model, gpus=args.n_gpus, cpu_relocation=True)
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=[metrics.keras_auc])
-    early_stopping = callbacks.EarlyStopping(
-        monitor='val_auc',
-        min_delta=0.001, 
-        patience=5,                       
-        verbose=1, 
-        mode='max', 
-        baseline=None, 
-        restore_best_weights=True
-    )
-    reduce_lr = callbacks.ReduceLROnPlateau(
-        monitor='val_auc', 
-        factor=0.5,
-        patience=3, 
-        min_lr=1e-6, 
-        mode='max', 
-        verbose=1
-    )
-    model.fit(
-        train_feature_lists, 
-        data_dictionary['y_train'], 
-        validation_data=(
-            val_feature_lists, 
-            data_dictionary['y_valid']),
-        verbose=1,
-        batch_size=1024,
-        callbacks=[early_stopping, reduce_lr],
-        epochs=100
-        )
+    model.compile(optimizer='adam',
+                  loss='binary_crossentropy',
+                  metrics=[metrics.keras_auc])
+    early_stopping = callbacks.EarlyStopping(monitor='val_auc',
+                                             min_delta=0.001,
+                                             patience=5,
+                                             verbose=1,
+                                             mode='max',
+                                             baseline=None,
+                                             restore_best_weights=True)
+    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_auc',
+                                            factor=0.5,
+                                            patience=3,
+                                            min_lr=1e-6,
+                                            mode='max',
+                                            verbose=1)
+    model.fit(train_feature_lists,
+              data_dictionary['y_train'],
+              validation_data=(val_feature_lists, data_dictionary['y_valid']),
+              verbose=1,
+              batch_size=1024,
+              callbacks=[early_stopping, reduce_lr],
+              epochs=100)
     model.save(f'{args.model_path}/keras_entity_embedding.h5')
 
 
