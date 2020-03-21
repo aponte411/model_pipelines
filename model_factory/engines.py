@@ -571,7 +571,7 @@ class NumerAIEngine:
         for trainer, tournament in zip(self.trainers, self.tourament_names):
             trainer.load_from_s3()
             predictions = trainer.make_predictions_and_prepare_submission(
-                data=self.data, submit=self.args.submit_to_numerai)
+                data=self.data, submit=self.args.submit)
             self.evaluate_predictions(predictions=predictions,
                                       trainer=trainer,
                                       tournament=tournament)

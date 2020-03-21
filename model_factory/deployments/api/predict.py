@@ -10,11 +10,11 @@ def parse_args() -> types.SimpleNamespace:
     parser.add_argument('--training-config',
                         default='deployments/api/training_config.yml')
     parser.add_argument('--competition', default='numerai')
-    parser.add_argument('--submit-to-numerai', default=True)
+    parser.add_argument('--submit', default=False)
     return parser.parse_args()
 
 
-def main(args):
+def main(args: types.SimpleNamespace):
     engine = NumerAIEngine(args=args)
     engine.run_inference_engine()
 

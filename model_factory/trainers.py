@@ -706,13 +706,8 @@ class NumerAITrainer:
         prediction: nx.Prediction = self.model.predict(data['tournament'],
                                                        self.tournament)
         prediction_filename: str = f'/tmp/{self.tournament}_predictions.csv'
-        try:
-            LOGGER.info(f"Saving predictions to CSV: {prediction_filename}")
-            prediction.to_csv(prediction_filename)
-        except Exception as e:
-            LOGGER.error(f'Failed to save predictions with {e}')
-            raise e
-
+        LOGGER.info(f"Saving predictions to CSV: {prediction_filename}")
+        prediction.to_csv(prediction_filename)
         if submit:
             try:
                 submission_id = nx.upload(filename=prediction_filename,

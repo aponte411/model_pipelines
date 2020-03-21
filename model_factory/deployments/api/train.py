@@ -13,7 +13,7 @@ def parse_args() -> types.SimpleNamespace:
     return parser.parse_args()
 
 
-def main(args):
+def main(args: types.SimpleNamespace):
     engine = NumerAIEngine(args=args)
     engine.run_training_engine()
 
