@@ -500,12 +500,25 @@ class IMDBEngine(Engine):
 
 
 class NumerAIEngine:
+    """
+    NumerAI Tournament Engine
+
+    Arguments:
+       args (types.SimpleNamespace) -- Engine arguments
+        - training_config (yaml) - path to training yaml
+        - competition (str) - name of competition; used to select trainer
+        [Optional] submit_to_numerai (bool) -- whether to submit predictions
+
+    Methods:
+        run_training_engine (self) -- train models
+        run_inference_engine (self) -- conduct inference
+    """
     def __init__(self, args):
         self.args = args
         self.tourament_names = nx.tournament_names()
         self.data = self.get_tournament_data()
-        self.setup_trainers
         self.load_trainer_params
+        self.setup_trainers
 
     @property
     def load_trainer_params(self):
@@ -541,7 +554,7 @@ class NumerAIEngine:
                 submit=self.args.submit_to_numerai)
             self.evaluate_predictions(predictions=predictions,
                                       trainer=trainer,
-                                      tournament=self.tournament)
+                                      tournament=tournament)
 
     def evaluate_predictions(self, predictions: nx.Prediction, trainer: Any,
                              tournament: str) -> None:

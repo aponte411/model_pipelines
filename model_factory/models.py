@@ -271,7 +271,6 @@ class NumeraAIModel(nx.Model):
                  n_estimators: int = 2019,
                  colsample_bytree: float = 0.019087,
                  tree_method: str = 'auto'):
-        self.params = None
         self.model = XGBRegressor(max_depth=max_depth,
                                   learning_rate=learning_rate,
                                   reg_lambda=l2,
@@ -318,7 +317,8 @@ class NumeraAIModel(nx.Model):
             LOGGER.error(f'Failure to prepare predictions with {e}')
             raise e
 
-    def fit_predict(self, dfit, dpre, tournament) -> Tuple:
+    def fit_predict(self, dfit: nx.data.Data, dpre: nx.data.Data,
+                    tournament: str) -> Tuple:
         # fit is done separately in `.fit()`
         yhat = self.model.predict(dpre.x)
         return dpre.ids, yhat
@@ -337,11 +337,11 @@ class NumeraAIModel(nx.Model):
                             bucket=credentials['bucket'])
         s3.download_file(filename=filename, key=key)
 
-    def save(self, filename) -> None:
+    def save(self, filename: str) -> None:
         """Serialize model locally"""
         joblib.dump(self, filename)
 
     @classmethod
-    def load(cls, filename) -> Any:
+    def load(cls, filename: str) -> Any:
         """Load trained model"""
         return joblib.load(filename)

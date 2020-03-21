@@ -665,16 +665,14 @@ class NumerAITrainer:
         )
 
     def train_model(self, data: nx.Data):
-        LOGGER.info(
-            f"Building XGBoostModel from scratch for {self.tournament}")
         if self.params["tree_method"] == 'gpu_hist':
-            LOGGER.info(f"Training XGBoost with GPU's")
+            LOGGER.info(f"Training with GPU's")
         self.model = self.model(max_depth=self.params["max_depth"],
                                 learning_rate=self.params["learning_rate"],
                                 l2=self.params["l2"],
                                 n_estimators=self.params["n_estimators"],
                                 tree_method=self.params["tree_method"])
-        LOGGER.info(f"Training XGBoost model for {self.tournament}")
+        LOGGER.info(f"Training NumerAIModel for {self.tournament}")
         eval_set = [(data['validation'].x,
                      data['validation'].y[self.tournament])]
         self.model.fit(dfit=data['train'],
@@ -698,12 +696,8 @@ class NumerAITrainer:
                                                 ) -> nx.Prediction:
         """
         Make predictions using the .predict() method
-        and save to CSV undet tmp folder.
-
-        Requires environmental variables for PUBLIC_ID and
-        SECRET_KEY.
+        and save to CSV under tmp folder.
         """
-
         public_id = self.params['credentials'].get('numerai_public_id')
         secret_key = self.params['credentials'].get('numerai_secret_key')
 
