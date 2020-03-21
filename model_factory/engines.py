@@ -513,7 +513,7 @@ class NumerAIEngine:
         run_training_engine (self) -- train models
         run_inference_engine (self) -- conduct inference
     """
-    def __init__(self, args):
+    def __init__(self, args: types.SimpleNamespace):
         self.args = args
         self.tourament_names = nx.tournament_names()
         self.data = self.get_tournament_data()
@@ -521,11 +521,11 @@ class NumerAIEngine:
         self.setup_trainers
 
     @property
-    def load_trainer_params(self):
+    def load_trainer_params(self) -> None:
         self.trainer_params = yaml.load(self.args.training_config)
 
     @property
-    def setup_trainers(self):
+    def setup_trainers(self) -> None:
         trainer = trainers.TrainerFactory.get_trainer(
             name=self.args.competition)
         self.trainers = [
@@ -533,7 +533,7 @@ class NumerAIEngine:
         ]
 
     @staticmethod
-    def get_tournament_data():
+    def get_tournament_data() -> nx.data.Data:
         try:
             data: nx.data.Data = nx.download('numerai_dataset.zip')
         except Exception as e:
@@ -541,13 +541,13 @@ class NumerAIEngine:
             raise e
         return data
 
-    def run_training_engine(self):
+    def run_training_engine(self) -> None:
         for trainer in self.trainers:
             trainer.train_model(data=self.data)
             trainer.save_model_locally()
             trainer.save_to_s3()
 
-    def run_inference_engine(self):
+    def run_inference_engine(self) -> None:
         for trainer, tournament in zip(self.trainers, self.tourament_names):
             trainer.load_from_s3()
             predictions = trainer.make_predictions_and_prepare_submission(

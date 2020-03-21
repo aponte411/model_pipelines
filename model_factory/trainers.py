@@ -651,11 +651,11 @@ class NumerAITrainer:
         self.tournament = tournament
         self.model = models.NumerAIModel
 
-    def load_model_locally(self):
+    def load_model_locally(self) -> None:
         LOGGER.info(f"Using saved model for {self.tournament}")
         self.model.load(self.params['key'])
 
-    def load_from_s3(self):
+    def load_from_s3(self) -> None:
         self.model.load_from_s3(filename=self.params['filename'],
                                 key=self.params['key'],
                                 credentials=self.params['credentials'])
@@ -664,7 +664,7 @@ class NumerAITrainer:
             f"Trained model loaded from s3 bucket: {self.params['credentials'].get('bucket')}"
         )
 
-    def train_model(self, data: nx.Data):
+    def train_model(self, data: nx.Data) -> None:
         if self.params["tree_method"] == 'gpu_hist':
             LOGGER.info(f"Training with GPU's")
         self.model = self.model(max_depth=self.params["max_depth"],
@@ -679,11 +679,11 @@ class NumerAITrainer:
                        tournament=self.tournament,
                        eval_set=eval_set)
 
-    def save_model_locally(self):
+    def save_model_locally(self) -> None:
         LOGGER.info(f"Saving model for {self.tournament} locally")
         self.model.save(self.params['key'])
 
-    def save_to_s3(self):
+    def save_to_s3(self) -> None:
         LOGGER.info(
             f"Saving {self.params['name']} for {self.tournament} to s3 bucket")
         self.model.save_to_s3(filename=self.params['filename'],
