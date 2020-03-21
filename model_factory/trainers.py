@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Tuple
 import joblib
 import mlflow
 import mlflow.sklearn
+import numerox as nx
 import numpy as np
 import pandas as pd
 import torch
@@ -26,6 +27,21 @@ from utils import EarlyStopping
 warnings.filterwarnings('ignore')
 
 LOGGER = utils.get_logger(__name__)
+
+
+class TrainerFactory:
+    @staticmethod
+    def get_trainer(name: str):
+        if name == 'numerai':
+            return NumerAITrainer
+        elif name == 'bengali':
+            return BengaliTrainer
+        elif name == 'google':
+            return GoogleQATrainer
+        elif name == 'imdb':
+            return IMDBTrainer
+        else:
+            return ValueError('trainer name not found')
 
 
 class BaseTrainer(ABC):
@@ -626,3 +642,93 @@ class IMDBTrainer(BaseTrainer):
         )
 
         return final_loss / counter, spearman_correlation
+
+
+class NumerAITrainer:
+    """Trains, serializes, loads, and conducts inference"""
+    def __init__(self, params: Dict, tournament=None):
+        self.params = params
+        self.tournament = tournament
+        self.model = models.NumerAIModel
+
+    def load_model_locally(self):
+        LOGGER.info(f"Using saved model for {self.tournament}")
+        self.model.load(self.params['key'])
+
+    def load_from_s3(self):
+        self.model.load_from_s3(filename=self.params['filename'],
+                                key=self.params['key'],
+                                credentials=self.params['credentials'])
+        self.model = self.model.load(self.params['key'])
+        LOGGER.info(
+            f"Trained model loaded from s3 bucket: {self.params['credentials'].get('bucket')}"
+        )
+
+    def train_model(self, data: nx.Data):
+        LOGGER.info(
+            f"Building XGBoostModel from scratch for {self.tournament}")
+        if self.params["tree_method"] == 'gpu_hist':
+            LOGGER.info(f"Training XGBoost with GPU's")
+        self.model = self.model(max_depth=self.params["max_depth"],
+                                learning_rate=self.params["learning_rate"],
+                                l2=self.params["l2"],
+                                n_estimators=self.params["n_estimators"],
+                                tree_method=self.params["tree_method"])
+        LOGGER.info(f"Training XGBoost model for {self.tournament}")
+        eval_set = [(data['validation'].x,
+                     data['validation'].y[self.tournament])]
+        self.model.fit(dfit=data['train'],
+                       tournament=self.tournament,
+                       eval_set=eval_set)
+
+    def save_model_locally(self):
+        LOGGER.info(f"Saving model for {self.tournament} locally")
+        self.model.save(self.params['key'])
+
+    def save_to_s3(self):
+        LOGGER.info(
+            f"Saving {self.params['name']} for {self.tournament} to s3 bucket")
+        self.model.save_to_s3(filename=self.params['filename'],
+                              key=self.params['key'],
+                              credentials=self.params['credentials'])
+
+    def make_predictions_and_prepare_submission(self,
+                                                data: nx.Data,
+                                                submit: bool = False
+                                                ) -> nx.Prediction:
+        """
+        Make predictions using the .predict() method
+        and save to CSV undet tmp folder.
+
+        Requires environmental variables for PUBLIC_ID and
+        SECRET_KEY.
+        """
+
+        public_id = self.params['credentials'].get('numerai_public_id')
+        secret_key = self.params['credentials'].get('numerai_secret_key')
+
+        LOGGER.info(f"Making predictions...")
+        prediction: nx.Prediction = self.model.predict(data['tournament'],
+                                                       self.tournament)
+        prediction_filename: str = f'/tmp/{self.params["name"]}_prediction_{self.tournament}.csv'
+        try:
+            LOGGER.info(f"Saving predictions to CSV: {prediction_filename}")
+            prediction.to_csv(prediction_filename)
+        except Exception as e:
+            LOGGER.error(f'Failed to save predictions with {e}')
+            raise e
+
+        if submit:
+            try:
+                submission_id = nx.upload(filename=prediction_filename,
+                                          tournament=self.tournament,
+                                          public_id=public_id,
+                                          secret_key=secret_key,
+                                          block=False,
+                                          n_tries=3)
+                LOGGER.info(
+                    f'Predictions submitted. Submission id: {submission_id}')
+            except Exception as e:
+                LOGGER.error(f'Failure to upload predictions with {e}')
+                raise e
+        return prediction

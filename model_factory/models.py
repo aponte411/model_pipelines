@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 import joblib
+import numerox as nx
 import numpy as np
 import pandas as pd
 import pretrainedmodels
@@ -12,7 +13,6 @@ import tensorflow as tf
 import torch
 import torch.nn as nn
 import transformers
-import xgboost as xgb
 from catboost import CatBoostRegressor
 from keras import Sequential, layers, metrics
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
@@ -29,6 +29,7 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
+from xgboost import XGBRegressor
 
 import utils
 from datasets import BengaliDataSetTest, BengaliDataSetTrain
@@ -260,3 +261,87 @@ class BERTBaseUncased(nn.Module):
                                                  token_type_ids=token_type_ids)
         bert_output = self.bert_drop(pooler_output)
         return self.out(bert_output)
+
+
+class NumeraAIModel(nx.Model):
+    def __init__(self,
+                 max_depth: int = 7,
+                 learning_rate: float = 0.001777765,
+                 l2: float = 0.1111119,
+                 n_estimators: int = 2019,
+                 colsample_bytree: float = 0.019087,
+                 tree_method: str = 'auto'):
+        self.params = None
+        self.model = XGBRegressor(max_depth=max_depth,
+                                  learning_rate=learning_rate,
+                                  reg_lambda=l2,
+                                  n_estimators=n_estimators,
+                                  n_jobs=-1,
+                                  tree_method=tree_method,
+                                  colsample_bytree=colsample_bytree,
+                                  verbosity=3)
+
+    def fit(self,
+            dfit: nx.data.Data,
+            tournament: str,
+            eval_set=None,
+            eval_metric=None) -> None:
+        self.model.fit(X=dfit.x,
+                       y=dfit.y[tournament],
+                       eval_set=eval_set,
+                       eval_metric=eval_metric,
+                       early_stopping_rounds=50)
+
+    def predict(self, dpre: nx.data.Data, tournament: str) -> nx.Prediction:
+        """
+        Alternative to fit_predict() 
+        dpre: must be data['tournament']
+        tournament: can be int or str.
+        """
+        prediction = nx.Prediction()
+        data_predict = dpre.y_to_nan()
+        try:
+            LOGGER.info('Inference started...')
+            yhat = self.model.predict(data_predict.x)
+            LOGGER.info(
+                'Inference complete...now preparing predictions for submission'
+            )
+        except Exception as e:
+            LOGGER.error(f'Failure to make predictions with {e}')
+            raise e
+
+        try:
+            prediction = prediction.merge_arrays(data_predict.ids, yhat,
+                                                 self.name, tournament)
+            return prediction
+        except Exception as e:
+            LOGGER.error(f'Failure to prepare predictions with {e}')
+            raise e
+
+    def fit_predict(self, dfit, dpre, tournament) -> Tuple:
+        # fit is done separately in `.fit()`
+        yhat = self.model.predict(dpre.x)
+        return dpre.ids, yhat
+
+    def save_to_s3(self, filename: str, key: str, credentials: Any) -> None:
+        """Save model to s3 bucket"""
+        s3 = utils.S3Client(user=credentials['user'],
+                            password=credentials['password'],
+                            bucket=credentials['bucket'])
+        s3.upload_file(filename=filename, key=key)
+
+    def load_from_s3(self, filename: str, key: str, credentials: Any) -> None:
+        """Download model from s3 bucket"""
+        s3 = utils.S3Client(user=credentials['user'],
+                            password=credentials['password'],
+                            bucket=credentials['bucket'])
+        s3.download_file(filename=filename, key=key)
+
+    def save(self, filename) -> None:
+        """Serialize model locally"""
+        joblib.dump(self, filename)
+
+    @classmethod
+    def load(cls, filename) -> Any:
+        """Load trained model"""
+        return joblib.load(filename)

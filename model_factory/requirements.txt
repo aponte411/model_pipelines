@@ -34,3 +34,4 @@ transformers
 yapf
 pyyaml==5.2
 scipy
+numerox

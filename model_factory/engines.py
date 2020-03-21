@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import click
+import numerox as nx
 import numpy as np
 import pandas as pd
 import torch
@@ -16,6 +17,21 @@ import trainers
 import utils
 
 LOGGER = utils.get_logger(__name__)
+
+
+class EngineFactory:
+    @staticmethod
+    def get_engine(name: str):
+        if name == 'numerai':
+            return NumerAIEngine
+        elif name == 'bengali':
+            return BengaliEngine
+        elif name == 'google':
+            return GoogleQAEngine
+        elif name == 'imdb':
+            return IMDBEngine
+        else:
+            return ValueError('engine name not found')
 
 
 class Engine(ABC):
@@ -481,3 +497,57 @@ class IMDBEngine(Engine):
 
     def run_inference_engine(self):
         pass
+
+
+class NumerAIEngine:
+    def __init__(self, args):
+        self.args = args
+        self.tourament_names = nx.tournament_names()
+        self.data = self.get_tournament_data()
+        self.setup_trainers
+        self.load_trainer_params
+
+    @property
+    def load_trainer_params(self):
+        self.trainer_params = yaml.load(self.args.training_config)
+
+    @property
+    def setup_trainers(self):
+        trainer = trainers.TrainerFactory.get_trainer(
+            name=self.args.competition)
+        self.trainers = [
+            trainer(self.trainer_params) for tournament in self.tourament_names
+        ]
+
+    @staticmethod
+    def get_tournament_data():
+        try:
+            data: nx.data.Data = nx.download('numerai_dataset.zip')
+        except Exception as e:
+            LOGGER.info(f'Failure to download numerai data with {e}')
+            raise e
+        return data
+
+    def run_training_engine(self):
+        for trainer in self.trainers:
+            trainer.train_model(data=self.data)
+            trainer.save_model_locally()
+            trainer.save_to_s3()
+
+    def run_inference_engine(self):
+        for trainer, tournament in zip(self.trainers, self.tourament_names):
+            trainer.load_from_s3()
+            predictions = trainer.make_predictions_and_prepare_submission(
+                submit=self.args.submit_to_numerai)
+            self.evaluate_predictions(predictions=predictions,
+                                      trainer=trainer,
+                                      tournament=self.tournament)
+
+    def evaluate_predictions(self, predictions: nx.Prediction, trainer: Any,
+                             tournament: str) -> None:
+        """Evaluate the validation set predictions"""
+        LOGGER.info(
+            predictions.summaries(self.data['validation'],
+                                  tournament=tournament))
+        LOGGER.info(predictions[:, tournament].metric_per_era(
+            data=self.data['validation'], tournament=tournament))

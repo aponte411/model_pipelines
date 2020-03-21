@@ -1,0 +1,14 @@
+competition: "numerai"
+max_depth: 7
+learning_rate: 0.000123
+l2: 0.02
+n_estimators: 3000
+tree_method: "hist"
+filename: "xgboost_numerai"
+key: "xgboost_numerai"
+credentials:
+  numerai_public_id: ""
+  numerai_secret_key: ""
+  user: ""
+  password: ""
+  bucket: datadumpling
