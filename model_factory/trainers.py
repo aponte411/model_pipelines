@@ -653,39 +653,41 @@ class NumerAITrainer:
 
     def load_model_locally(self) -> None:
         LOGGER.info(f"Using saved model for {self.tournament}")
-        self.model.load(self.params['key'])
+        self.model = self.model().load(self.params['key'])
 
     def load_from_s3(self) -> None:
-        self.model.load_from_s3(filename=self.params['filename'],
-                                key=self.params['key'],
-                                credentials=self.params['credentials'])
-        self.model = self.model.load(self.params['key'])
+        model = self.model()
+        model.load_from_s3(filename=self.params['filename'],
+                           key=self.params['key'],
+                           credentials=self.params['credentials'])
+        self.model = model.load(self.params['key'])
         LOGGER.info(
             f"Trained model loaded from s3 bucket: {self.params['credentials'].get('bucket')}"
         )
 
     def train_model(self, data: nx.Data) -> None:
-        if self.params["tree_method"] == 'gpu_hist':
-            LOGGER.info(f"Training with GPU's")
-        self.model = self.model(max_depth=self.params["max_depth"],
-                                learning_rate=self.params["learning_rate"],
-                                l2=self.params["l2"],
-                                n_estimators=self.params["n_estimators"],
-                                tree_method=self.params["tree_method"])
+        model_params = self.params['model_params']
+        if model_params["tree_method"] == 'gpu_hist':
+            LOGGER.info("Training with GPU's")
+        self.model = self.model(max_depth=model_params["max_depth"],
+                                learning_rate=model_params["learning_rate"],
+                                l2=model_params["l2"],
+                                n_estimators=model_params["n_estimators"],
+                                tree_method=model_params["tree_method"])
         LOGGER.info(f"Training NumerAIModel for {self.tournament}")
         eval_set = [(data['validation'].x,
                      data['validation'].y[self.tournament])]
         self.model.fit(dfit=data['train'],
                        tournament=self.tournament,
-                       eval_set=eval_set)
+                       eval_set=eval_set,
+                       early_stopping=model_params['early_stopping_rounds'])
 
     def save_model_locally(self) -> None:
         LOGGER.info(f"Saving model for {self.tournament} locally")
         self.model.save(self.params['key'])
 
     def save_to_s3(self) -> None:
-        LOGGER.info(
-            f"Saving {self.params['name']} for {self.tournament} to s3 bucket")
+        LOGGER.info(f"Saving NumerAIModel for {self.tournament} to s3 bucket")
         self.model.save_to_s3(filename=self.params['filename'],
                               key=self.params['key'],
                               credentials=self.params['credentials'])
@@ -700,11 +702,10 @@ class NumerAITrainer:
         """
         public_id = self.params['credentials'].get('numerai_public_id')
         secret_key = self.params['credentials'].get('numerai_secret_key')
-
         LOGGER.info(f"Making predictions...")
         prediction: nx.Prediction = self.model.predict(data['tournament'],
                                                        self.tournament)
-        prediction_filename: str = f'/tmp/{self.params["name"]}_prediction_{self.tournament}.csv'
+        prediction_filename: str = f'/tmp/{self.tournament}_predictions.csv'
         try:
             LOGGER.info(f"Saving predictions to CSV: {prediction_filename}")
             prediction.to_csv(prediction_filename)

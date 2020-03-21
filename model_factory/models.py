@@ -263,7 +263,7 @@ class BERTBaseUncased(nn.Module):
         return self.out(bert_output)
 
 
-class NumeraAIModel(nx.Model):
+class NumerAIModel(nx.Model):
     def __init__(self,
                  max_depth: int = 7,
                  learning_rate: float = 0.001777765,
@@ -284,12 +284,13 @@ class NumeraAIModel(nx.Model):
             dfit: nx.data.Data,
             tournament: str,
             eval_set=None,
-            eval_metric=None) -> None:
+            eval_metric=None,
+            early_stopping=None) -> None:
         self.model.fit(X=dfit.x,
                        y=dfit.y[tournament],
                        eval_set=eval_set,
                        eval_metric=eval_metric,
-                       early_stopping_rounds=50)
+                       early_stopping_rounds=early_stopping)
 
     def predict(self, dpre: nx.data.Data, tournament: str) -> nx.Prediction:
         """
@@ -323,14 +324,16 @@ class NumeraAIModel(nx.Model):
         yhat = self.model.predict(dpre.x)
         return dpre.ids, yhat
 
-    def save_to_s3(self, filename: str, key: str, credentials: Any) -> None:
+    @staticmethod
+    def save_to_s3(filename: str, key: str, credentials: Any) -> None:
         """Save model to s3 bucket"""
         s3 = utils.S3Client(user=credentials['user'],
                             password=credentials['password'],
                             bucket=credentials['bucket'])
         s3.upload_file(filename=filename, key=key)
 
-    def load_from_s3(self, filename: str, key: str, credentials: Any) -> None:
+    @staticmethod
+    def load_from_s3(filename: str, key: str, credentials: Dict) -> None:
         """Download model from s3 bucket"""
         s3 = utils.S3Client(user=credentials['user'],
                             password=credentials['password'],

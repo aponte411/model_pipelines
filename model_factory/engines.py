@@ -1,8 +1,10 @@
+import os
+import types
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-import click
+import numerapi
 import numerox as nx
 import numpy as np
 import pandas as pd
@@ -516,21 +518,39 @@ class NumerAIEngine:
     def __init__(self, args: types.SimpleNamespace):
         self.args = args
         self.tourament_names = nx.tournament_names()
-        self.data = self.get_tournament_data()
         self.load_trainer_params
         self.setup_trainers
+        self.setup_data
 
     @property
     def load_trainer_params(self) -> None:
-        self.trainer_params = yaml.load(self.args.training_config)
+        with open(self.args.training_config) as file:
+            self.trainer_params = yaml.load(file)
 
     @property
     def setup_trainers(self) -> None:
         trainer = trainers.TrainerFactory.get_trainer(
             name=self.args.competition)
         self.trainers = [
-            trainer(self.trainer_params) for tournament in self.tourament_names
+            trainer(params=self.trainer_params, tournament=tournament)
+            for tournament in self.tourament_names
         ]
+
+    @property
+    def setup_data(self):
+        if self.trainer_params['get_current_data']:
+            napi = numerapi.NumerAPI(verbosity="info")
+            if napi.check_new_round():
+                LOGGER.info('Loading current dataset from NumerAPI..')
+                self.data = self.get_tournament_data()
+        else:
+            if os.path.isfile(self.trainer_params['local_data']):
+                LOGGER.info(
+                    f"Loading data locally from {self.trainer_params['local_data']}"
+                )
+                self.data = nx.load_zip(self.trainer_params['local_data'])
+            else:
+                return FileNotFoundError('local data not found')
 
     @staticmethod
     def get_tournament_data() -> nx.data.Data:
@@ -551,7 +571,7 @@ class NumerAIEngine:
         for trainer, tournament in zip(self.trainers, self.tourament_names):
             trainer.load_from_s3()
             predictions = trainer.make_predictions_and_prepare_submission(
-                submit=self.args.submit_to_numerai)
+                data=self.data, submit=self.args.submit_to_numerai)
             self.evaluate_predictions(predictions=predictions,
                                       trainer=trainer,
                                       tournament=tournament)

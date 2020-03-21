@@ -1,7 +1,7 @@
 import argparse
 import types
 
-from model_factory.engines import NumerAIEngine
+from engines import NumerAIEngine
 
 
 def parse_args() -> types.SimpleNamespace:
