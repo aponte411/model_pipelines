@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 import click
 import grpc
@@ -16,7 +16,7 @@ LOGGER = utils.get_logger(__name__)
               help='Server host name', show_default=True)
 @click.option('-p', '--port', type=int, default=50052,
               help='Server port number', show_default=True)
-@click.option('-s/-i', '--secure/--insecure',default=False,
+@click.option('-s/-i', '--secure/--insecure', default=False,
               help='Use a secure channel or not', show_default=True)
 @click.pass_context
 def cli(ctx: Any, host: str, port: int, secure: bool):
@@ -32,10 +32,13 @@ def cli(ctx: Any, host: str, port: int, secure: bool):
 
 
  @cli.command()
- @click.option('-cfg', '--config', type=str, required=True, default='deployments/api/training_config.yml', help='Path to training config')
- @click.option('-cmp', '--competition', type=str, required=False, help='Name of current competition')
+ @click.option('-cfg', '--config', type=str, required=True,
+    default='deployments/api/training_config.yml', help='Path to training config')
+ @click.option('-cmp', '--competition', type=str,
+    required=False, help='Name of current competition')
  @click.pass_context
  def train(ctx: Dict, config: str, competition: str):
+     """Train and store model in s3 bucket"""
      with ctx.obj['channel_context'] as channel:
          stub = numerai_pb2_grpc.NumerAIEngineAPIStub(channel)
          train_request = numerai_pb2.TrainRequest(config=config, competition=competition)
@@ -45,11 +48,16 @@ def cli(ctx: Any, host: str, port: int, secure: bool):
 
 
  @cli.command()
- @click.option('-cfg', '--config', type=str, required=False, help='Path to inference config')
- @click.option('-cmp', '--competition', type=str, required=False, help='Name of current competition')
- @click.option('-sub', '--submit', type=bool, required=False, help='Submit predictions to live NumerAI tournamenet')
+ @click.option('-cfg', '--config', type=str,
+    default='deployments/api/training_config.yml',
+    required=False, help='Path to inference config')
+ @click.option('-cmp', '--competition', type=str, 
+    required=False, help='Name of current competition')
+ @click.option('-sub', '--submit', type=bool, 
+    required=False, help='Submit predictions to live NumerAI tournamenet')
  @click.pass_context
  def predict(ctx: Dict, config: str, competition: str, submit: bool):
+     """Load model from s3 and conduct inference"""
     with ctx.obj['channel_context'] as channel:
         stub = numerai_pb2_grpc.NumerAIEngineAPIStub(channel)
         inference_request = numerai_pb2.InferenceRequest(
