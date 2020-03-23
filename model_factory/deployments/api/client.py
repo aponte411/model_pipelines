@@ -51,9 +51,9 @@ def cli(ctx: Any, host: str, port: int, secure: bool):
  @click.option('-cfg', '--config', type=str,
     default='deployments/api/training_config.yml',
     required=False, help='Path to inference config')
- @click.option('-cmp', '--competition', type=str, 
+ @click.option('-cmp', '--competition', type=str,
     required=False, help='Name of current competition')
- @click.option('-sub', '--submit', type=bool, 
+ @click.option('-sub', '--submit', type=bool,
     required=False, help='Submit predictions to live NumerAI tournamenet')
  @click.pass_context
  def predict(ctx: Dict, config: str, competition: str, submit: bool):
@@ -61,8 +61,8 @@ def cli(ctx: Any, host: str, port: int, secure: bool):
     with ctx.obj['channel_context'] as channel:
         stub = numerai_pb2_grpc.NumerAIEngineAPIStub(channel)
         inference_request = numerai_pb2.InferenceRequest(
-            config=config, 
-            competition=competition, 
+            config=config,
+            competition=competition,
             submit=submit)
         response = stub.Predict(inference_request)
         LOGGER.info(f'Response: {response}')
