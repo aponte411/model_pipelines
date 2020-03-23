@@ -1,3 +1,37 @@
 syntax = "proto3";
 
-import model_factory;
+
+service NumerAIEngineAPI{
+    rpc Train(TrainRequest) returns (Response){
+    };
+    rpc Predict(InferenceRequest) returns (Response){
+    };
+};
+
+
+message TrainRequest {
+    string config = 1;
+    string competition = 2;
+}
+message InferenceRequest {
+    string config = 1;
+    string competition = 2;
+    bool submit = 3;
+}
+message Response {
+    enum StatusCode {
+        started = 0;
+        success = 1;
+        failed = 2;
+        not_found = 3;
+    }
+    StatusCode status = 1;
+    string message = 2;
+}
+message Prediction {
+    string id = 1;
+    float score = 2;
+}
+message Predictions {
+    repeated Prediction predictions = 1;
+}

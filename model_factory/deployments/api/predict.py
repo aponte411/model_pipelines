@@ -1,7 +1,10 @@
 import argparse
 import types
 
+import utils
 from engines import NumerAIEngine
+
+LOGGER = utils.get_logger(__name__)
 
 
 def parse_args() -> types.SimpleNamespace:
@@ -16,7 +19,9 @@ def parse_args() -> types.SimpleNamespace:
 
 def main(args: types.SimpleNamespace):
     engine = NumerAIEngine(args=args)
-    engine.run_inference_engine()
+    predictions = engine.run_inference_engine()
+    for tournament, prediction in predictions.items():
+        LOGGER.info(prediction.df.shape)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+trained_models
+inputs
+__pycache__
+bash_scripts
+docker_images
+tests
+scripts
+polyaxon
+configs
+deployments/airflow
+deployments/pipelines
+deployments/webapp
+deployments/__init__.py
+scrap.ipynb
+.polyaxonignore

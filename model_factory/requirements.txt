@@ -35,3 +35,6 @@ yapf
 pyyaml==5.2
 scipy
 numerox
+numerapi
+grpcio
+grpcio-tools

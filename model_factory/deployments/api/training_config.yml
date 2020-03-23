@@ -1,0 +1,18 @@
+competition: "numerai"
+model_params:
+  max_depth: 6
+  learning_rate: 0.000123
+  l2: 0.1
+  n_estimators: 3000
+  tree_method: "auto"
+  early_stopping_rounds: 10
+filename: "xgboost_numerai"
+key: "xgboost_numerai"
+get_current_data: False
+local_data: "inputs/numerai/numerai_dataset.zip"
+credentials:
+  numerai_public_id: "4WJK3CRZTLY4774NAALPIB2QADTUS4HK"
+  numerai_secret_key: "C5OIVEM5MRBTOT6PU7GZLQZTXLUZPQR5WHH3RG7YU35A6KVYFHBUKZILGZI5VMLY"
+  user: "AKIAIJFZTRS554JD65PA"
+  password: "CiQr/uCNiTNqV+tMfAh9LlGnAl+zmoZkd8T4gC9h"
+  bucket: datadumpling

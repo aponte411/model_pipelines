@@ -509,14 +509,18 @@ class NumerAIEngine:
        args (types.SimpleNamespace) -- Engine arguments
         - training_config (yaml) - path to training yaml
         - competition (str) - name of competition; used to select trainer
-        [Optional] submit_to_numerai (bool) -- whether to submit predictions
 
     Methods:
         run_training_engine (self) -- train models
         run_inference_engine (self) -- conduct inference
     """
-    def __init__(self, args: types.SimpleNamespace):
-        self.args = args
+    def __init__(self,
+                 training_config: str,
+                 competition: str = 'numerai',
+                 submit: bool = False):
+        self.training_config = training_config
+        self.competition = competition
+        self.submit = submit
         self.tourament_names = nx.tournament_names()
         self.load_trainer_params
         self.setup_trainers
@@ -524,13 +528,12 @@ class NumerAIEngine:
 
     @property
     def load_trainer_params(self) -> None:
-        with open(self.args.training_config) as file:
+        with open(self.training_config) as file:
             self.trainer_params = yaml.load(file)
 
     @property
     def setup_trainers(self) -> None:
-        trainer = trainers.TrainerFactory.get_trainer(
-            name=self.args.competition)
+        trainer = trainers.TrainerFactory.get_trainer(name=self.competition)
         self.trainers = [
             trainer(params=self.trainer_params, tournament=tournament)
             for tournament in self.tourament_names
@@ -567,14 +570,17 @@ class NumerAIEngine:
             trainer.save_model_locally()
             trainer.save_to_s3()
 
-    def run_inference_engine(self) -> None:
+    def run_inference_engine(self) -> Dict:
+        prediction_dict = {}
         for trainer, tournament in zip(self.trainers, self.tourament_names):
             trainer.load_from_s3()
             predictions = trainer.make_predictions_and_prepare_submission(
-                data=self.data, submit=self.args.submit)
+                data=self.data, submit=self.submit)
             self.evaluate_predictions(predictions=predictions,
                                       trainer=trainer,
                                       tournament=tournament)
+            prediction_dict[tournament] = predictions
+        return prediction_dict
 
     def evaluate_predictions(self, predictions: nx.Prediction, trainer: Any,
                              tournament: str) -> None:
