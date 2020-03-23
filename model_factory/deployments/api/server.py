@@ -1,4 +1,4 @@
-from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor
 
 import numerai_pb2
 import numerai_pb2_grpc
@@ -26,7 +26,7 @@ class NumerAIEngineAPI(numerai_pb2_grpc.NumerAIEngineAPIServicer):
 
 def serve():
     LOGGER.info("Starting server..")
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(ThreadPoolExecutor(max_workers=10))
     numerai_pb2_grpc.add_NumerAIEngineAPIServicer_to_server(
         NumerAIEngineAPI(), server)
     SERVICE_NAMES = (
