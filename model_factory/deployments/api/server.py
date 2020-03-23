@@ -1,10 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
 
+import grpc
+
 import numerai_pb2
 import numerai_pb2_grpc
 import utils
 from engines import NumerAIEngine
-from grpc_reflection.v1alpha import reflection
 
 LOGGER = utils.get_logger(__name__)
 
@@ -29,11 +30,6 @@ def serve():
     server = grpc.server(ThreadPoolExecutor(max_workers=10))
     numerai_pb2_grpc.add_NumerAIEngineAPIServicer_to_server(
         NumerAIEngineAPI(), server)
-    SERVICE_NAMES = (
-        numerai_pb2.DESCRIPTOR.services_by_name['NumerAIEngineAPI'].full_name,
-        reflection.SERVICE_NAME,
-    )
-    reflection.enable_server_reflection(SERVICE_NAMES, server)
     server.add_insecure_port('[::]:50052')
     server.start()
     LOGGER.info("Server started")
