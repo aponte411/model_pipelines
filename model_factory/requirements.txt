@@ -38,3 +38,4 @@ numerox
 numerapi
 grpcio
 grpcio-tools
+pre-commit

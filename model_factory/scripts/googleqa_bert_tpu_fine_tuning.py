@@ -26,7 +26,7 @@ CREDENTIALS['bucket'] = os.environ.get("bucket")
 
 class GoogleQATPUTrainer(BaseTrainer):
     """
-    Trainer to handle training, inference, scoring, 
+    Trainer to handle training, inference, scoring,
     and saving/loading weights using GCP TPU node.
 
     Args:

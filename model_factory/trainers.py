@@ -279,7 +279,7 @@ class BengaliLightningTrainer(Trainer):
 
 class GoogleQATrainer(BaseTrainer):
     """
-    Trainer to handle training, inference, scoring, 
+    Trainer to handle training, inference, scoring,
     and saving/loading weights.
 
     Args:
@@ -443,7 +443,7 @@ class GoogleQATrainer(BaseTrainer):
 
 class IMDBTrainer(BaseTrainer):
     """
-    Trainer to handle training, inference, scoring, 
+    Trainer to handle training, inference, scoring,
     and saving/loading weights.
 
     Args:

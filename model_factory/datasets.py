@@ -193,7 +193,7 @@ class BengaliDataSetTest(Dataset):
 class GoogleQADataSetTrain(Dataset):
     """
     Google QuestionAnswer dataset to train and
-    validate models. Requires you to download kaggle dataset 
+    validate models. Requires you to download kaggle dataset
     using the following command:
         1. `kaggle competitions download -c google-quest-challenge`
         2. `unzip google-quest-challenge.zip`

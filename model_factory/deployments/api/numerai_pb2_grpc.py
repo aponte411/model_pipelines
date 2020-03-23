@@ -5,59 +5,61 @@ import numerai_pb2 as numerai__pb2
 
 
 class NumerAIEngineAPIStub(object):
-  # missing associated documentation comment in .proto file
-  pass
+    # missing associated documentation comment in .proto file
+    pass
 
-  def __init__(self, channel):
-    """Constructor.
+    def __init__(self, channel):
+        """Constructor.
 
     Args:
       channel: A grpc.Channel.
     """
-    self.Train = channel.unary_unary(
-        '/NumerAIEngineAPI/Train',
-        request_serializer=numerai__pb2.TrainRequest.SerializeToString,
-        response_deserializer=numerai__pb2.Response.FromString,
+        self.Train = channel.unary_unary(
+            '/NumerAIEngineAPI/Train',
+            request_serializer=numerai__pb2.TrainRequest.SerializeToString,
+            response_deserializer=numerai__pb2.Response.FromString,
         )
-    self.Predict = channel.unary_unary(
-        '/NumerAIEngineAPI/Predict',
-        request_serializer=numerai__pb2.InferenceRequest.SerializeToString,
-        response_deserializer=numerai__pb2.Response.FromString,
+        self.Predict = channel.unary_unary(
+            '/NumerAIEngineAPI/Predict',
+            request_serializer=numerai__pb2.InferenceRequest.SerializeToString,
+            response_deserializer=numerai__pb2.Response.FromString,
         )
 
 
 class NumerAIEngineAPIServicer(object):
-  # missing associated documentation comment in .proto file
-  pass
-
-  def Train(self, request, context):
     # missing associated documentation comment in .proto file
     pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
 
-  def Predict(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
+    def Train(self, request, context):
+        # missing associated documentation comment in .proto file
+        pass
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Predict(self, request, context):
+        # missing associated documentation comment in .proto file
+        pass
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
 
 def add_NumerAIEngineAPIServicer_to_server(servicer, server):
-  rpc_method_handlers = {
-      'Train': grpc.unary_unary_rpc_method_handler(
-          servicer.Train,
-          request_deserializer=numerai__pb2.TrainRequest.FromString,
-          response_serializer=numerai__pb2.Response.SerializeToString,
-      ),
-      'Predict': grpc.unary_unary_rpc_method_handler(
-          servicer.Predict,
-          request_deserializer=numerai__pb2.InferenceRequest.FromString,
-          response_serializer=numerai__pb2.Response.SerializeToString,
-      ),
-  }
-  generic_handler = grpc.method_handlers_generic_handler(
-      'NumerAIEngineAPI', rpc_method_handlers)
-  server.add_generic_rpc_handlers((generic_handler,))
+    rpc_method_handlers = {
+        'Train':
+        grpc.unary_unary_rpc_method_handler(
+            servicer.Train,
+            request_deserializer=numerai__pb2.TrainRequest.FromString,
+            response_serializer=numerai__pb2.Response.SerializeToString,
+        ),
+        'Predict':
+        grpc.unary_unary_rpc_method_handler(
+            servicer.Predict,
+            request_deserializer=numerai__pb2.InferenceRequest.FromString,
+            response_serializer=numerai__pb2.Response.SerializeToString,
+        ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+        'NumerAIEngineAPI', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler, ))

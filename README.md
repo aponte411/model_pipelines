@@ -1,6 +1,6 @@
 # MODEL-PIPELINES
 
-This is my personal repository to build pipelines that preprocess data, train models, make inference, and are able to be productionized using AWS or GCP. I set up it so that it can work with different ML API's such as scikit-learn, pytorch, xgboost, etc. and multiple types of datasets. 
+This is my personal repository to build pipelines that preprocess data, train models, make inference, and are able to be productionized using AWS or GCP. I set up it so that it can work with different ML API's such as scikit-learn, pytorch, xgboost, etc. and multiple types of datasets.
 
 It's a WIP so I'll be regularly changing things to reduce complexity, deal with bugs, and allow the package to generalize to more types of ML problems. My end goal is for this package to be starter code for others to use and integrate into their own projects. Happy modeling!
 

@@ -236,7 +236,7 @@ class BengaliEngine(Engine):
                 CREDENTIALS['bucket'] = os.environ.get("bucket")
 
         Returns:
-            submission_df {pd.DataFrame} -- A predictions dataframe ready for submission 
+            submission_df {pd.DataFrame} -- A predictions dataframe ready for submission
             to the public leaderboard.
         """
         def _conduct_inference() -> defaultdict:

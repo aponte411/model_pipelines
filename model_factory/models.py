@@ -294,7 +294,7 @@ class NumerAIModel(nx.Model):
 
     def predict(self, dpre: nx.data.Data, tournament: str) -> nx.Prediction:
         """
-        Alternative to fit_predict() 
+        Alternative to fit_predict()
         dpre: must be data['tournament']
         tournament: can be int or str.
         """
