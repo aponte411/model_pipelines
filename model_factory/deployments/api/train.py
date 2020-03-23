@@ -14,7 +14,8 @@ def parse_args() -> types.SimpleNamespace:
 
 
 def main(args: types.SimpleNamespace):
-    engine = NumerAIEngine(args=args)
+    engine = NumerAIEngine(training_config=args.training_config,
+                           competition=args.competition)
     engine.run_training_engine()
 
 
