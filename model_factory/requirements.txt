@@ -32,7 +32,7 @@ pytorch_transformers
 tensorflow
 transformers
 yapf
-pyyaml==5.2
+pyyaml==5.4
 scipy
 numerox
 numerapi
