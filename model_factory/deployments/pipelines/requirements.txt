@@ -2,7 +2,7 @@ pandas_gbq==0.13.1
 scikit-learn==0.22.1
 pandas==0.25.0
 mlflow==1.6.0
-pillow==7.0.0
+pillow==9.0.0
 dash==1.9.0
 numpy==1.18.1
 boto3==1.11.13
